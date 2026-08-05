@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能校对工具</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fff0f3;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+  }
+  h1 {
+    font-size: 42px;
+    color: #d81b60;
+    margin-bottom: 60px;
+    letter-spacing: 4px;
+    font-weight: 700;
+  }
+  .cards {
+    display: flex;
+    gap: 60px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .card {
+    width: 320px;
+    height: 220px;
+    background: #fff;
+    border: 3px solid #f48fb1;
+    border-radius: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #d81b60;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    box-shadow: 0 8px 24px rgba(216, 27, 96, 0.08);
+    transition: all 0.25s ease;
+    cursor: pointer;
+  }
+  .card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 36px rgba(216, 27, 96, 0.15);
+    border-color: #d81b60;
+    background: #fff5f8;
+  }
+  @media (max-width: 768px) {
+    h1 { font-size: 32px; margin-bottom: 40px; }
+    .cards { gap: 30px; }
+    .card { width: 260px; height: 180px; font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+  <h1>智能校对工具</h1>
+  <div class="cards">
+    <a href="数学教材编辑部_工具平台.html" class="card">查资料</a>
+    <a href="题答对应.html" class="card">题答对应</a>
+  </div>
+</body>
+</html>
