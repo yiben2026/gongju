@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数学教材编辑部 · 工具平台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --pink: #ff6b8a; --pink-bg: #ffe4ea; --pink-light: #fff5f8; --pink-border: #ffc4d2;
+    --blue: #4a90e2; --blue-bg: #e6f0ff;
+    --green: #5cb85c; --green-bg: #e8f6e8;
+    --yellow: #f0ad4e; --yellow-bg: #fff7e6;
+    --purple: #9b59b6; --purple-bg: #f3e6f7;
+    --cyan: #17a2b8; --cyan-bg: #e0f7fa;
+    --magenta: #e83e8c; --magenta-bg: #fce4ec;
+    --gray-50: #fafbfc; --gray-100: #f5f7fa; --gray-200: #e4e7ed; --gray-300: #dcdfe6;
+    --gray-400: #c0c4cc; --gray-500: #909399; --gray-600: #606266; --gray-700: #303133; --gray-800: #1f1f1f;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.10);
+    --radius: 12px;
+    --nav-height: 60px;
+    --header-height: 48px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #fff5f8 0%, #fafbff 50%, #f5f0ff 100%);
+    color: var(--gray-700); line-height: 1.6; min-height: 100vh;
+    padding-top: calc(var(--nav-height) + var(--header-height));
+  }
+
+  /* === HEADER BAR === */
+  .header-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1001;
+    height: var(--header-height);
+    background: var(--pink);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none;
+    box-shadow: 0 2px 8px rgba(255,107,138,0.3);
+  }
+  .header-bar span {
+    font-size: 18px; font-weight: 700; color: #fff;
+    letter-spacing: 3px;
+  }
+  .header-bar:hover { background: #ff5270; }
+
+  /* === TOP NAV === */
+  .top-nav {
+    position: fixed; top: var(--header-height); left: 0; right: 0; z-index: 1000;
+    height: var(--nav-height);
+    background: #fff;
+    border-bottom: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; justify-content: center;
+    gap: 0;
+  }
+  .nav-item {
+    padding: 0 32px; height: var(--nav-height);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600; color: var(--gray-600);
+    cursor: pointer; position: relative;
+    transition: color 0.2s, background 0.2s;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--pink); }
+  .nav-item.active {
+    color: var(--pink);
+  }
+  .nav-item.active::after {
+    content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 3px; background: var(--pink); border-radius: 3px 3px 0 0;
+  }
+
+  /* === TAB CONTENT === */
+  .tab-content { display: none; padding: 24px 16px 80px; }
+  .tab-content.active { display: block; }
+  .container { max-width: 1240px; margin: 0 auto; }
+
+  /* === SEARCH BOX === */
+  .search-wrap {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .search-box {
+    flex: 1; position: relative;
+  }
+  .search-box input {
+    width: 100%; padding: 12px 44px 12px 16px;
+    border: 2px solid var(--gray-200); border-radius: var(--radius);
+    font-size: 15px; color: var(--gray-700); background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  .search-box input:focus {
+    border-color: var(--pink); box-shadow: 0 0 0 3px rgba(255,107,138,0.12);
+  }
+  .search-box .search-icon {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    width: 20px; height: 20px; color: var(--gray-400); pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* === BUTTONS === */
+  .btn-group { display: flex; gap: 10px; margin-bottom: 24px; }
+  .btn {
+    padding: 10px 28px; border: 2px solid var(--gray-200); border-radius: 20px;
+    font-size: 14px; font-weight: 600; cursor: pointer; background: #fff; color: var(--gray-600);
+    transition: all 0.2s; outline: none;
+  }
+  .btn:hover { border-color: var(--pink); color: var(--pink); }
+  .btn.active {
+    background: var(--pink); color: #fff; border-color: var(--pink);
+  }
+  .btn-add-new {
+    background: linear-gradient(135deg, var(--pink), #ff8fa0);
+    color: #fff; border-color: transparent;
+  }
+  .btn-add-new:hover { opacity: 0.9; }
+
+  /* === CHIPS === */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .chip {
+    padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--gray-200); background: #fff; color: var(--gray-600);
+    transition: all 0.2s; user-select: none;
+  }
+  .chip:hover { border-color: var(--pink); }
+  .chip.active { background: var(--pink); color: #fff; border-color: var(--pink); }
+  .chip .count { margin-left: 4px; opacity: 0.7; font-size: 12px; }
+
+  /* === DASHBOARD === */
+  .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .dash-card {
+    background: #fff; border-radius: var(--radius); padding: 20px 24px;
+    box-shadow: var(--shadow-sm); border: 1px solid var(--gray-100);
+    text-align: center;
+  }
+  .dash-card .num { font-size: 32px; font-weight: 700; color: var(--pink); }
+  .dash-card .label { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
+
+  /* === MAIN CARD === */
+  .cards-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px;
+  }
+  .card {
+    background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-md);
+    padding: 24px; border: 1px solid var(--gray-100);
+    transition: transform 0.2s, box-shadow 0.2s; position: relative;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .card-title { font-size: 17px; font-weight: 700; color: var(--gray-800); flex: 1; line-height: 1.4; }
+  .card-cat {
+    padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;
+    white-space: nowrap; margin-left: 12px;
+  }
+  .card-body { display: flex; flex-direction: column; gap: 8px; }
+  .ver-row {
+    display: flex; align-items: flex-start; gap: 8px; padding: 6px 0;
+    border-bottom: 1px solid var(--gray-50);
+  }
+  .ver-row:last-child { border-bottom: none; }
+  .ver-tag {
+    padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    white-space: nowrap; min-width: 40px; text-align: center;
+  }
+  .ver-text { font-size: 13px; color: var(--gray-600); line-height: 1.6; flex: 1; white-space: pre-wrap; }
+  .card-actions {
+    margin-top: 14px; display: flex; gap: 10px; justify-content: flex-end;
+  }
+  .card-actions button {
+    padding: 6px 16px; border-radius: 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; border: 1.5px solid var(--gray-200);
+    background: #fff; color: var(--gray-600); outline: none;
+  }
+  .card-actions button:hover { border-color: var(--pink); color: var(--pink); }
+  .card-actions .btn-edit:hover { border-color: var(--blue); color: var(--blue); }
+  .card-actions .btn-del:hover { border-color: #e74c3c; color: #e74c3c; }
+  .card-tip {
+    margin-top: 14px; padding: 10px 14px; background: #fffbe6; border-left: 3px solid var(--yellow);
+    border-radius: 6px; font-size: 12px; color: #b8860b;
+  }
+
+  /* === EDIT MODAL === */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.45); z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-box {
+    background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-lg);
+    padding: 28px 32px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* === ADD FORM === */
+  .add-form {
+    background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-md);
+    padding: 28px 32px; max-width: 800px; margin: 0 auto; border: 1px solid var(--gray-100);
+  }
+  .add-form h3 { font-size: 20px; color: var(--gray-800); margin-bottom: 24px; font-weight: 700; }
+  .form-row { margin-bottom: 18px; }
+  .form-row label {
+    display: block; font-size: 14px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px;
+  }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%; padding: 10px 14px; border: 2px solid var(--gray-200); border-radius: 8px;
+    font-size: 14px; color: var(--gray-700); outline: none; font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+    border-color: var(--pink); box-shadow: 0 0 0 3px rgba(255,107,138,0.12);
+  }
+  .form-row textarea { min-height: 80px; resize: vertical; }
+  .ver-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ver-inputs .vi-label { font-size: 13px; color: var(--gray-600); margin-bottom: 4px; font-weight: 600; }
+  .submit-row { display: flex; gap: 12px; margin-top: 24px; }
+  .btn-submit {
+    padding: 12px 36px; background: linear-gradient(135deg, var(--pink), #ff8fa0);
+    color: #fff; border: none; border-radius: 20px; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-submit:hover { opacity: 0.9; }
+  .btn-cancel {
+    padding: 12px 36px; border: 2px solid var(--gray-200); border-radius: 20px;
+    font-size: 15px; font-weight: 600; cursor: pointer; background: #fff; color: var(--gray-600);
+  }
+  .btn-cancel:hover { border-color: var(--pink); color: var(--pink); }
+
+  /* === EMPTY STATE === */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--gray-400);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; }
+
+  /* === RESOURCE CARDS === */
+  .resource-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;
+  }
+  .resource-card {
+    background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-100); overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .resource-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .resource-img {
+    width: 100%; height: 160px; background: var(--gray-100);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .resource-img img { width: 100%; height: 100%; object-fit: cover; }
+  .resource-img .placeholder {
+    font-size: 40px; color: var(--gray-300);
+  }
+  .resource-info { padding: 16px 20px; }
+  .resource-name { font-size: 16px; font-weight: 700; color: var(--gray-800); margin-bottom: 6px; }
+  .resource-link {
+    font-size: 13px; color: var(--blue); word-break: break-all;
+    display: block; margin-bottom: 8px;
+  }
+  .resource-link:hover { text-decoration: underline; }
+  .resource-actions { display: flex; gap: 8px; }
+  .resource-actions button {
+    padding: 4px 12px; border-radius: 12px; border: 1px solid var(--gray-200);
+    background: #fff; color: var(--gray-600); font-size: 12px; cursor: pointer;
+  }
+  .resource-actions button:hover { border-color: var(--pink); color: var(--pink); }
+  .resource-actions .btn-del:hover { border-color: #e74c3c; color: #e74c3c; }
+
+  /* === SEARCH ENGINE TAB === */
+  .search-hero {
+    text-align: center; padding: 60px 20px 40px;
+  }
+  .search-hero h2 { font-size: 28px; color: var(--gray-800); margin-bottom: 8px; }
+  .search-hero .subtitle { font-size: 14px; color: var(--gray-500); }
+  .search-result-list { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+  .search-result-item {
+    background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    padding: 18px 24px; border: 1px solid var(--gray-100);
+  }
+  .search-result-item .result-source {
+    font-size: 11px; color: var(--gray-500); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .search-result-item .result-title {
+    font-size: 16px; font-weight: 700; color: var(--gray-800); margin-bottom: 4px;
+  }
+  .search-result-item .result-desc {
+    font-size: 13px; color: var(--gray-600); white-space: pre-wrap;
+  }
+
+  /* === CLOUD CONFIG === */
+  .cloud-config {
+    background: linear-gradient(135deg, #fff5f8 0%, #fff 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .cloud-config-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .cloud-config-header h3 {
+    margin: 0;
+    font-size: 15px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cloud-config-header .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .cloud-config-header .badge.connected {
+    background: #d4f7dc;
+    color: #1d9b4a;
+  }
+  .cloud-config-header .badge.disconnected {
+    background: #ffe4ea;
+    color: var(--primary);
+  }
+  .cloud-config-body {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+  .cloud-config .form-row {
+    margin-bottom: 12px;
+  }
+  .cloud-config label {
+    font-size: 13px;
+    color: var(--gray-600);
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .cloud-config input[type="text"], .cloud-config input[type="password"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+    box-sizing: border-box;
+  }
+  .cloud-config input:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .cloud-config .hint {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 4px;
+  }
+  .cloud-config .cfg-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .cloud-config .cfg-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .cloud-config .cfg-btn.primary {
+    background: var(--primary);
+    color: #fff;
+  }
+  .cloud-config .cfg-btn.primary:hover { background: #ff5270; }
+  .cloud-config .cfg-btn.ghost {
+    background: #fff;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+  .cloud-config .cfg-btn.ghost:hover { background: #fff5f8; }
+  .cloud-config .cfg-btn.danger {
+    background: #fff;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    font-size: 12px;
+  }
+  .cloud-config .cfg-status {
+    font-size: 12px;
+    color: var(--gray-600);
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.7);
+    margin-bottom: 8px;
+    display: none;
+  }
+  .cloud-config .cfg-status.show { display: block; }
+  .cloud-config .cfg-status.success { color: #1d9b4a; background: #d4f7dc; }
+  .cloud-config .cfg-status.error { color: #e74c3c; background: #fde8e8; }
+
+  /* === TOAST === */
+  .toast {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999;
+    padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 600;
+    color: #fff; background: #333; box-shadow: var(--shadow-lg);
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+    pointer-events: none;
+  }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .nav-item { padding: 0 16px; font-size: 14px; }
+    .cards-grid, .resource-grid { grid-template-columns: 1fr; }
+    .dashboard { grid-template-columns: repeat(2, 1fr); }
+    .ver-inputs { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- === HEADER BAR === -->
+<a href="index.html" class="header-bar"><span>智能校对工具</span></a>
+
+<!-- === TOP NAV === -->
+<nav class="top-nav">
+  <span class="nav-item active" data-tab="tab-textbook" onclick="switchTab('tab-textbook', this)">教材版本</span>
+  <span class="nav-item" data-tab="tab-resources" onclick="switchTab('tab-resources', this)">资料收录</span>
+  <span class="nav-item" data-tab="tab-search" onclick="switchTab('tab-search', this)">搜索引擎</span>
+</nav>
+
+<!-- === TAB 1: 教材版本 === -->
+<div id="tab-textbook" class="tab-content active">
+<div class="container">
+  <!-- Book cloud sync panel -->
+  <div class="cloud-config" id="book-cloud-config">
+    <div class="cloud-config-header" onclick="toggleBookCloudConfig()">
+      <h3>☁️ 教材版本云端共享 <span class="badge disconnected" id="book-cloud-badge">未连接</span></h3>
+      <span style="font-size:13px;color:var(--gray-500);" id="book-cloud-toggle-hint">展开 ▾</span>
+    </div>
+    <div class="cloud-config-body" id="book-cloud-config-body" style="display:none;">
+      <div class="cfg-status" id="book-cloud-status"></div>
+      <div class="hint" id="book-cloud-default-hint" style="margin-bottom:12px;padding:8px 12px;background:#fff5f8;border-radius:8px;color:var(--primary);font-size:12px;display:none;">
+        当前正在使用系统内置默认配置，无需手动填写。如需使用自己的仓库，请修改后点击「保存配置」。
+      </div>
+      <div class="form-row">
+        <label>Gitee 用户名</label>
+        <input type="text" id="cfg-book-gitee-user" placeholder="例：zhangsan">
+      </div>
+      <div class="form-row">
+        <label>仓库名</label>
+        <input type="text" id="cfg-book-gitee-repo" placeholder="例：jiaocaibanben" value="jiaocaibanben">
+      </div>
+      <div class="form-row">
+        <label>Personal Access Token</label>
+        <input type="password" id="cfg-book-gitee-token" placeholder="在 Gitee 设置 → 私人令牌 生成">
+      </div>
+      <div class="cfg-actions">
+        <button class="cfg-btn primary" onclick="saveBookCloudConfig()">💾 保存配置</button>
+        <button class="cfg-btn ghost" onclick="createBookCloudRepo()">🔧 一键创建仓库</button>
+        <button class="cfg-btn ghost" onclick="syncBookFromCloud()">⬇️ 立即从云端拉取</button>
+        <button class="cfg-btn ghost" onclick="restoreDefaultBookCloudConfig()">↩️ 恢复默认配置</button>
+        <button class="cfg-btn danger" onclick="clearBookCloudConfig()">🗑 清空配置</button>
+      </div>
+      <div class="hint" style="margin-top:10px;color:var(--gray-500);font-size:12px;line-height:1.6;">
+        <b>配置一次后，所有人用相同的用户名+仓库名+Token 即可共享教材版本数据。</b><br>
+        添加、修改、删除知识点后自动同步到 Gitee，其他人打开网页或切到此 tab 时自动拉取。
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="tb-dashboard"></div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <input type="text" id="tb-search" placeholder="搜索知识点名称或任意版本内容…" oninput="renderBookView()">
+      <span class="search-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-group">
+    <button class="btn active" id="btn-view-all" onclick="setBookMode('all')">全部</button>
+    <button class="btn btn-add-new" id="btn-view-add" onclick="setBookMode('add')">+ 添加</button>
+  </div>
+
+  <!-- Category chips (only in 'all' mode) -->
+  <div class="chips" id="tb-chips"></div>
+
+  <!-- VIEW: ALL -->
+  <div id="book-view-all">
+    <div class="cards-grid" id="book-cards"></div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div id="edit-modal" style="display:none;"></div>
+
+  <!-- VIEW: ADD -->
+  <div id="book-view-add" style="display:none;">
+    <div class="add-form">
+      <h3>添加新知识点</h3>
+      <div class="form-row">
+        <label>知识点名称</label>
+        <input type="text" id="add-name" placeholder="例：叫做/叫作">
+      </div>
+      <div class="form-row">
+        <label>各版本描述</label>
+        <div class="ver-inputs">
+          <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1" placeholder="描述…"></div>
+          <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2" placeholder="描述…"></div>
+          <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3" placeholder="描述…"></div>
+          <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4" placeholder="描述…"></div>
+          <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5" placeholder="描述…"></div>
+          <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6" placeholder="描述…"></div>
+          <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7" placeholder="描述…"></div>
+        </div>
+      </div>
+      <div class="submit-row">
+        <button class="btn-submit" onclick="addBookItem()">确认添加</button>
+        <button class="btn-cancel" onclick="setBookMode('all')">取消</button>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;">
+        <button class="btn" onclick="exportResources()" style="background:#fff;border:1.5px solid var(--pink);color:var(--pink);border-radius:10px;padding:8px 16px;font-weight:600;cursor:pointer;font-size:13px;">📤 导出全部数据</button>
+        <button class="btn" onclick="document.getElementById('book-import-file').click()" style="background:#fff;border:1.5px solid var(--blue);color:var(--blue);border-radius:10px;padding:8px 16px;font-weight:600;cursor:pointer;font-size:13px;">📥 导入数据</button>
+        <input type="file" id="book-import-file" accept=".json" style="display:none;" onchange="importResources(this)">
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- === TAB 2: 资料收录 === -->
+<div id="tab-resources" class="tab-content">
+<div class="container">
+  <!-- Gitee cloud sync panel -->
+  <div class="cloud-config" id="cloud-config">
+    <div class="cloud-config-header" onclick="toggleCloudConfig()">
+      <h3>☁️ Gitee 云端共享 <span class="badge disconnected" id="cloud-badge">未连接</span></h3>
+      <span style="font-size:13px;color:var(--gray-500);" id="cloud-toggle-hint">展开 ▾</span>
+    </div>
+    <div class="cloud-config-body" id="cloud-config-body" style="display:none;">
+      <div class="cfg-status" id="cloud-status"></div>
+      <div class="hint" id="cloud-default-hint" style="margin-bottom:12px;padding:8px 12px;background:#fff5f8;border-radius:8px;color:var(--primary);font-size:12px;display:none;">
+        当前正在使用系统内置默认配置，无需手动填写。如需使用自己的仓库，请修改后点击「保存配置」。
+      </div>
+      <div class="form-row">
+        <label>Gitee 用户名</label>
+        <input type="text" id="cfg-gitee-user" placeholder="例：zhangsan">
+        <div class="hint">你在 <a href="https://gitee.com" target="_blank">gitee.com</a> 的用户名（手机号注册即可）</div>
+      </div>
+      <div class="form-row">
+        <label>仓库名</label>
+        <input type="text" id="cfg-gitee-repo" placeholder="例：math-resources" value="math-resources">
+        <div class="hint">用于存放资料的仓库。下方「一键创建」会自动新建。</div>
+      </div>
+      <div class="form-row">
+        <label>Personal Access Token</label>
+        <input type="password" id="cfg-gitee-token" placeholder="在 Gitee 设置 → 私人令牌 生成">
+        <div class="hint">登录 Gitee → 右上角头像 → 设置 → 私人令牌 → 生成新令牌（勾选 projects 权限）</div>
+      </div>
+      <div class="cfg-actions">
+        <button class="cfg-btn primary" onclick="saveCloudConfig()">💾 保存配置</button>
+        <button class="cfg-btn ghost" onclick="createNewBin()">🔧 一键创建仓库</button>
+        <button class="cfg-btn ghost" onclick="syncFromCloud()">⬇️ 立即从云端拉取</button>
+        <button class="cfg-btn ghost" onclick="restoreDefaultCloudConfig()">↩️ 恢复默认配置</button>
+        <button class="cfg-btn danger" onclick="clearCloudConfig()">🗑 清空配置</button>
+      </div>
+      <div class="hint" style="margin-top:10px;color:var(--gray-500);font-size:12px;line-height:1.6;">
+        <b>配置一次后，所有人用相同的用户名+仓库名+Token 即可共享数据。</b><br>
+        新资料添加后自动同步到 Gitee，其他人打开网页或切到此 tab 时自动拉取。
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <input type="text" id="res-search" placeholder="搜索资料名称或链接…" oninput="renderResources()">
+      <span class="search-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- Add resource button -->
+  <div class="btn-group" style="margin-bottom:24px; gap:10px;">
+    <button class="btn btn-add-new" onclick="toggleResourceForm()">+ 添加资料</button>
+    <button class="btn" onclick="exportResources()" style="background:#fff;border:1.5px solid var(--pink);color:var(--pink);border-radius:10px;padding:10px 20px;font-weight:600;cursor:pointer;">📤 导出数据</button>
+    <button class="btn" onclick="document.getElementById('res-import-file').click()" style="background:#fff;border:1.5px solid var(--blue);color:var(--blue);border-radius:10px;padding:10px 20px;font-weight:600;cursor:pointer;">📥 导入数据</button>
+    <input type="file" id="res-import-file" accept=".json" style="display:none;" onchange="importResources(this)">
+  </div>
+
+  <!-- Add form -->
+  <div id="res-add-form" style="display:none; margin-bottom:24px;">
+    <div class="add-form">
+      <h3>添加资料</h3>
+      <div class="form-row">
+        <label>资料名称</label>
+        <input type="text" id="res-name" placeholder="例：人教社教材电子版">
+      </div>
+      <div class="form-row">
+        <label>网站链接</label>
+        <input type="url" id="res-link" placeholder="https://…">
+      </div>
+      <div class="form-row">
+        <label>图片（可直接粘贴图片地址，或上传本地图片）</label>
+        <input type="text" id="res-img" placeholder="粘贴图片地址，或点击右侧上传">
+        <input type="file" id="res-img-file" accept="image/*" onchange="handleImageUpload(this)" style="margin-top:8px;">
+      </div>
+      <div class="submit-row">
+        <button class="btn-submit" onclick="addResource()">确认添加</button>
+        <button class="btn-cancel" onclick="toggleResourceForm(false)">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resource list -->
+  <div class="resource-grid" id="res-grid"></div>
+  <div class="empty-state" id="res-empty" style="display:none;">
+    <div class="icon">📋</div>
+    <p>暂无资料，点击上方按钮添加</p>
+  </div>
+</div>
+</div>
+
+<!-- === TAB 3: 搜索引擎 === -->
+<div id="tab-search" class="tab-content">
+<div class="container">
+  <div class="search-hero">
+    <h2>全域搜索</h2>
+    <p class="subtitle">在教材版本对比数据、用户添加内容和资料库中搜索</p>
+  </div>
+  <!-- Search -->
+  <div class="search-wrap" style="max-width:720px; margin:0 auto 8px;">
+    <div class="search-box">
+      <input type="text" id="global-search" placeholder="输入关键词搜索所有内容…" oninput="doGlobalSearch()">
+      <span class="search-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+    </div>
+  </div>
+  <div class="search-result-list" id="global-results"></div>
+  <div class="empty-state" id="global-empty" style="display:none;">
+    <div class="icon">🔍</div>
+    <p>输入关键词开始搜索</p>
+  </div>
+</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+// ====== DATA ======
+const bookData = [{"name": "叫做/叫作", "cols": {"1": "叫作", "2": "叫作", "3": "叫作", "4": "叫做（7年级），叫作（8,9年级）", "5": "叫作（7,8年级）叫做（9年级）", "6": "叫作（新7下8下）叫做（旧版+新9下）", "7": "叫做"}, "row": 2}, {"name": "连接/连结", "cols": {"1": "连接", "2": "连接", "3": "连接", "4": "连接", "5": "连接", "6": "连结（注意：用“＜”连接）", "7": "连结"}, "row": 3}, {"name": "去括号/添括号", "cols": {"1": "七上P99去括号；八上P116添括号", "2": "七上P90去括号法则\n八下P115中出现加括号的叙述", "3": "去括号法则、添括号法则", "4": "去括号法则", "5": "七上P91去括号法则", "6": "七上P116去括号法则，\n七下P117添括号法则", "7": "七上P107 去（添）括号（法则）"}, "row": 4}, {"name": "表达式/解析式", "cols": {"1": "写（求）出y关于x的函数解析式；\n求一次函数的解析式", "2": "写（求）出y与x之间的关系式           表达式", "3": "函数表达式", "4": "y关于x的函数表达式", "5": "函数表达式", "6": "函数表达式（简称函数式）", "7": "函数表达式/函数关系式"}, "row": 5}, {"name": "图象", "cols": {"1": "图象", "2": "图象", "3": "图象", "4": "图象", "5": "图象（新版） 图像（旧版）", "6": "图象", "7": "图象"}, "row": 6}, {"name": "判别式Δ", "cols": {"1": "Δ(斜体)（九上二元一次方程第一次出现）", "2": "Δ(斜体，九上P43)", "3": "Δ(ZT)", "4": "Δ(ZT)", "5": "Δ(斜体)", "6": "无（判别式b²-4ac）", "7": "九上P32Δ(斜体)"}, "row": 7}, {"name": "看做/看作", "cols": {"1": "看作", "2": "七下P136看作", "3": "看作", "4": "看做（七年级）/看作（8,9年级）", "5": "七下P80 看作", "6": "看作（新7下8下）看做（旧版+\n新9下）", "7": "看作"}, "row": 8}, {"name": "代数式", "cols": {"1": "七上第三章出现（二次根式也是代数式）", "2": "七上第三章整式及其加减P78", "3": "七上P62 2.1", "4": "七上 第二章 代数式", "5": "七上第三章代数式", "6": "七上第4章", "7": "七上P84"}, "row": 9}, {"name": "有无“HL”", "cols": {"1": "八上第十四章P42 ；正体", "2": "八下第一章P30\n正体HL", "3": "八上P106，正体", "4": "正体ＨＬ（八下P20）", "5": "正体HL", "6": "八上P86 正体", "7": "HL（正体，八上P84）"}, "row": 10}, {"name": "×", "cols": {"1": "乘；乘数为字母时，用“·”或省略", "2": "乘", "3": "乘以", "4": "乘", "5": "乘", "6": "乘以", "7": "乘以"}, "row": 11}, {"name": "集合/{   ···}", "cols": {"1": "七上P8", "2": "七上P25", "3": "七上P6括号，且不加···，即{  }", "4": "无", "5": "未明确定义，八上P35出现“集合”", "6": "无", "7": "七上P4集合{   …}"}, "row": 12}, {"name": "单位长度", "cols": {"1": "右移1个单位长度", "2": "右移1个单位长度", "3": "单位长度", "4": "右移1个单位(长度），统一即可", "5": "单位长度", "6": "单位或单位长度", "7": "单位长度"}, "row": 13}, {"name": "准确数/准确值", "cols": {"1": "七上P55准确数；近似数；精确度", "2": "七上P67准确值", "3": "七上P50准确值，准确数", "4": "无", "5": "八上P77准确值", "6": "七上P57准确数", "7": "七上P64准确数"}, "row": 14}, {"name": "等式(不等式）的性质", "cols": {"1": "七上P115等式的性质；  \n七下P124不等式的性质", "2": "七上P139等式的基本性质\n八下P58不等式的基本性质", "3": "七上P95等式的基本性质                   七下P30不等式的基本性质", "4": "等式性质\n不等式基本性质", "5": "七上P107等式的基本性质   七下P118不等式的基本性质", "6": "等式的（基本）性质（七上第5章)\n不等式的基本性质(八上）", "7": "七下P6 等式的基本性质\nP60 不等式的基本性质"}, "row": 15}, {"name": "分式的（基本）性质", "cols": {"1": "八上P140分式的基本性质", "2": "八下P128分式的基本性质", "3": "分式的基本性质", "4": "分式的基本性质", "5": "分式的基本性质", "6": "分式的基本性质", "7": "八下P3分式的基本性质"}, "row": 16}, {"name": "增根", "cols": {"1": "没有明确提出，但可以用", "2": "八下P144 增根", "3": "七下P116增根", "4": "旧8上P33增根/一样中未提及", "5": "八下P143", "6": "七下P148", "7": "八下P15"}, "row": 17}, {"name": "系数化为1", "cols": {"1": "七上P120系数化为1", "2": "（方程的）两边都除以xx，得", "3": "（方程）两边同除以xx，得     （不等式）x系数化成1，得", "4": "（方程）两边都除以xx，得", "5": "（方程）两边都除以xx，得\n或系数化为1，得", "6": "两边同除以xx，得", "7": "（方程）将未知数的系数化为1，得\n（不等式）两边都除以××，得"}, "row": 18}, {"name": "垂直平分线/中垂线", "cols": {"1": "八上P64垂直平分线", "2": "七下P129垂直平分线（可以用中垂线）", "3": "八上P123（可以用中垂线）", "4": "垂直平分线", "5": "七下P60垂直平分线", "6": "八上P39垂直平分线/中垂线", "7": "七上P174垂直平分线"}, "row": 19}, {"name": "统计图名称", "cols": {"1": "条形图，扇形图，折线图，直方图（频数分布直方图），复合条形图", "2": "条形（扇形或折线）统计图，频数直方图", "3": "条形（扇形或折线）统计图，八下P120频数直方图", "4": "条形统计图，折线统计图，扇形统计图，复式（条形或折线）统计图，频数直方图", "5": "条形统计图，折线统计图，扇形统计图，频数分布直方图", "6": "条形统计图，折线统计图，扇形统计图，{频数）直方图", "7": "扇形统计图，条形统计图，折线统计图，频数分布直方图"}, "row": 20}, {"name": "统计图表示", "cols": {"1": "横轴、纵轴无箭头，为直线；\n省略先下后上；先右后左", "2": "横轴、纵轴有箭头", "3": "不用箭头用短线", "4": "横轴、纵轴有箭头", "5": "横轴、纵轴无箭头（用数字0）", "6": "横轴、纵轴有箭头（用数字0）", "7": "频数分布直方图有箭头，折线统计图和条形统计图无箭头"}, "row": 21}, {"name": "百分比/百分率", "cols": {"1": "百分比", "2": "百分比", "3": "百分率", "4": "百分比", "5": "百分比", "6": "百分比", "7": "百分比"}, "row": 22}, {"name": "全面调查/普查", "cols": {"1": "七下P152全面调查", "2": "七上普查", "3": "七上全面调查（普查）", "4": "七上全面调查（普查）", "5": "八下P4普查", "6": "全面调查", "7": "八上P146普查"}, "row": 23}, {"name": "方向角/方位角", "cols": {"1": "新版教材没有明确出现过，七上P172描述物\n体运动的方向", "2": "八上P55表示方向的角", "3": "八上P10方位角", "4": "八下P88方位角", "5": "新版改为用方向和距离确定位置（八上P129）", "6": "八上P114：用方向和距离来确定物\n体的位置（或称方位）", "7": "七上P156方位角：物体运动方向与正北方向的夹角；未提及方向角"}, "row": 24}, {"name": "盈利/赢利", "cols": {"1": "七上P1盈利", "2": "盈利", "3": "盈利", "4": "盈利", "5": "盈利", "6": "盈利", "7": "获利"}, "row": 26}, {"name": "∵ ∴", "cols": {"1": "七下P14第一次出现", "2": "八上P187", "3": "八上P76", "4": "八上P56/一样中未提及", "5": "七下12章P154", "6": "八上", "7": "七上P186"}, "row": 27}, {"name": "投影", "cols": {"1": "九下投影线", "2": "光线", "3": "投射线/光线", "4": "投影线", "5": "新版无", "6": "投影：影子；投射线：照射光线", "7": "投影：影子；投影线：照射光线"}, "row": 28}, {"name": "从正面看/从前面看", "cols": {"1": "七上P153从前面看", "2": "从正面看", "3": "从正面看", "4": "从正面看", "5": "新版无", "6": "主视方向", "7": "从正面看"}, "row": 29}, {"name": "三视图", "cols": {"1": "九下三视图", "2": "三种视图", "3": "三视图", "4": "三视图", "5": "新版无", "6": "三视图", "7": "三视图"}, "row": 30}, {"name": "树状图/列表", "cols": {"1": "画树状图无开始，无箭头  \n利用树状图法或列表法", "2": "画树状图有开始，有箭头\n利用画树状图或列表的方法", "3": "有开始，有箭头，用树状图或列表法", "4": "画树状图有开始，无箭头\n利用树状图法或列表法", "5": "树状图有开始，有箭头，\n通过列表或画树状图", "6": "树状图无开始，无箭头\n列表或画树状图", "7": "树状图无开始和箭头"}, "row": 31}, {"name": "平均数、中位数、众数", "cols": {"1": "都不加单位", "2": "八上P151有单位", "3": "八下P129有单位", "4": "有单位", "5": "有单位", "6": "有单位", "7": "八下P157有单位"}, "row": 32}, {"name": "变量", "cols": {"1": "x是自变量；y是x的函数", "2": "七下P146因变量", "3": "无因变量这个说法 自变量，函数值", "4": "8下P110因变量", "5": "x自变量，y函数值", "6": "x自变量，y是x的函数", "7": "八下P32x自变量，y因变量"}, "row": 33}, {"name": "二次函数顶点式", "cols": {"1": "y=a(x-h)^2+k", "2": "y=a(x-h)^2+k", "3": "y=a(x+h)^2+k", "4": "y=a(x-h)^2+k", "5": "y=a(x+h)^2+k", "6": "y=a(x-m)^2+k（a≠0）", "7": "y=a(x-h)^2+k（a≠0）"}, "row": 34}, {"name": "对称轴", "cols": {"1": "对称轴是x=", "2": "对称轴是直线x=", "3": "对称轴是直线x=", "4": "对称轴是直线x=", "5": "过顶点且平行于y轴的直线", "6": "对称轴是直线x=", "7": "对称轴是直线x="}, "row": 35}, {"name": "抛物线", "cols": {"1": "九上二次函数抛物线形拱桥", "2": "抛物线形拱桥，拱桥呈抛物线形状 九下P48", "3": "抛物线形", "4": "抛物线形", "5": "抛物线形", "6": "...形状是抛物线/...呈抛物线", "7": "抛物线"}, "row": 36}, {"name": "两点之间线段最短（指的是简，原话需要看教材）", "cols": {"1": "七上P165两点之间，线段最短", "2": "两点之间线段最短", "3": "两点之间的所有连线中，线段最短", "4": "两点之间线段最短", "5": "两点之间，线段最短", "6": "两点之间线段最短", "7": "七上P146两点之间线段最短"}, "row": 37}, {"name": "两点确定一条直线（指的是简，原话需要看教材）", "cols": {"1": "七上P162两点确定一条直线", "2": "两点确定一条直线", "3": "经过两点有一条直线，并且只有一条直线（两点确定一条直线）", "4": "两点确定一条直线", "5": "两点确定一条直线", "6": "两点确定一条直线", "7": "七上P147两点确定一条直线"}, "row": 38}, {"name": "同类二次根式", "cols": {"1": "无", "2": "无", "3": "八下P10二次根式的加减", "4": "无", "5": "有，八下二次根式的加减", "6": "无", "7": "九上P10"}, "row": 39}, {"name": "证明", "cols": {"1": "七下P23", "2": "八上第七章", "3": "八上P73 13.2 命题与证明", "4": "八上第2章2.2节/一样第4章第2节", "5": "七下第12章P153", "6": "八上第1章", "7": "八上P63"}, "row": 40}, {"name": "极差", "cols": {"1": "无", "2": "有     八上P149", "3": "无", "4": "无", "5": "有，九上第三章，3.4方差", "6": "八下P88", "7": "无，八下P164特别大或特别小的异常值"}, "row": 41}, {"name": "菱形对角线的性质", "cols": {"1": "菱形的两条对角线互相垂直，并且每一条对角线平分一组对角", "2": "菱形的对角线互相垂直", "3": "菱形的对角线互相垂直", "4": "菱形的对角线互相垂直", "5": "菱形的对角线互相垂直", "6": "菱形的对角线互相垂直", "7": "菱形的对角线互相垂直"}, "row": 42}, {"name": "”>”“<”或“=”", "cols": {"1": "”>”“<”或“=”", "2": "”>”“<”或“=”", "3": "”>”“<”或“=”", "4": "”>”“<”或“=”", "5": "“>”“<”或“=”\n用“<”号连接起来", "6": "“>”“<”或“=”\n用“<”连接起来", "7": "用“<”号或“>”号"}, "row": 43}, {"name": "割线", "cols": {"1": "九上P96", "2": "无", "3": "九下P33", "4": "九下P64", "5": "无", "6": "无", "7": "无"}, "row": 44}, {"name": "有序数对", "cols": {"1": "七下P65有序数对", "2": "八上P60有序实数对", "3": "八上P3有序实数对", "4": "八下P84有序实数对", "5": "八上P112有序实数对", "6": "八上P114有序实数对", "7": "八下P38有序实数对"}, "row": 45}, {"name": "三角形符号△", "cols": {"1": "八上P2", "2": "七下P85", "3": "八上P64 13.1出现三角形符号", "4": "八上P42△/一样P86", "5": "七上第6章第5节", "6": "八上第1章", "7": "七下P81"}, "row": 46}, {"name": "直角三角形符号RT△", "cols": {"1": "八上P14", "2": "八下P25", "3": "八上P67", "4": "八上一样P91", "5": "八上P28", "6": "直角可以用RT∠来表示\n八上第2章2.6", "7": "七下P85"}, "row": 47}, {"name": "截距", "cols": {"1": "无", "2": "无", "3": "八上P39 截距", "4": "无", "5": "无", "6": "无", "7": "无"}, "row": 48}, {"name": "分配律", "cols": {"1": "七上P41分配律", "2": "七上P51 乘法对加法的分配律", "3": "分配律", "4": "乘法对加法的分配律（简称为分配律）", "5": "乘法分配律", "6": "七上P42分配律", "7": "八上P46乘法对加法的分配律"}, "row": 49}, {"name": "完全平方式", "cols": {"1": "八上P129", "2": "七下P21 完全平方公式", "3": "七下P74", "4": "七下P45 完全平方公式", "5": "七下P37 完全平方公式", "6": "七下P121", "7": "八上P38两数和（差）的平方公式"}, "row": 50}, {"name": "矩形", "cols": {"1": "八下P68", "2": "九上第一章第2节", "3": "八下第19章19.3第1节", "4": "八下第2章2.5", "5": "八下第8章", "6": "八下第5章5.1", "7": "八下P110"}, "row": 51}, {"name": "实数", "cols": {"1": "七下P39", "2": "八上第二章", "3": "七下第6章6.2", "4": "八上第3章3.3/一样中未提及", "5": "八上第2章", "6": "七上第3章", "7": "八上P8"}, "row": 52}, {"name": "平行且相等", "cols": {"1": "八下P61竖直的", "2": "八下P160 斜体", "3": "八下P86", "4": "八下P45", "5": "无", "6": "八下P125斜体", "7": "八下P90斜体"}, "row": 53}, {"name": "中点+平行→中位线", "cols": {"1": "八下P63", "2": "八下P171", "3": "八下P90", "4": "八下P55", "5": "八下第8章", "6": "八下第4章4.5", "7": "八下P98"}, "row": 54}, {"name": "作图", "cols": {"1": "七上P164尺规作图", "2": "七上P114尺规作图", "3": "七上P149尺规作图", "4": "旧七上P121/八上一样P124尺规作图", "5": "七上P158用直尺和圆规作图/尺\n规作图", "6": "八上P37尺规作图", "7": "尺规作图"}, "row": 55}, {"name": "等边三角形", "cols": {"1": "八上P82判定和性质", "2": "七下P88", "3": "八上P64，等边三角形（正三角形）", "4": "八上一样P86 等边三角形（或正三角形）", "5": "等边三角形(九上P81出现正三角形)", "6": "八上等边三角形（九上正三角形）", "7": "七下P82等边三角形或正三角形"}, "row": 56}, {"name": "因式分解", "cols": {"1": "八上P124", "2": "八下第四章", "3": "七下第8章8.4", "4": "八上一样第1章", "5": "因式分解也可称为分解因式\n提公因式法，运用公式法", "6": "七下第4章", "7": "八上提公因式法，公式法"}, "row": 57}, {"name": "三角形的外角", "cols": {"1": "八上P15外角和定理", "2": "八下第一章P5", "3": "八上P80", "4": "八上一样P91", "5": "概念出现在七上第6章，\n七下158页“三角形的外角等于与它不相邻的两个内角的和”", "6": "八上第1章P22", "7": "七下P87"}, "row": 58}, {"name": "三角尺（板）", "cols": {"1": "三角尺", "2": "三角尺", "3": "三角板", "4": "三角板", "5": "七上P74三角板", "6": "三角板/尺", "7": "三角板"}, "row": 59}, {"name": "30°角所对直角边是\n斜边一半", "cols": {"1": "八上P83", "2": "八下P19", "3": "八上P150", "4": "八上一样P160", "5": "八上第一章三角形", "6": "无", "7": "无"}, "row": 60}, {"name": "直角三角形斜边的中线等\n于斜边的一半", "cols": {"1": "八下P69", "2": "九上P12", "3": "八下P97", "4": "八上一样P158", "5": "八上第一章三角形", "6": "八上第2章P75", "7": "八下P120"}, "row": 61}, {"name": "", "cols": {"1": "", "2": "打几折用汉字", "3": "打几折用数字", "4": "", "5": "如果...... ，那么......", "6": "如果......那么......", "7": "九上P115铅垂高度"}, "row": 62}, {"name": "", "cols": {"1": "", "2": "", "3": "有理式：整式和分式", "4": "", "5": "", "6": "笛卡尔（八上）", "7": "打几折用汉字"}, "row": 63}, {"name": "", "cols": {"1": "", "2": "", "3": "一元二次方程根与系数的关系，又称为韦达定理", "4": "", "5": "", "6": "打几折用数字（七上用汉字）", "7": ""}, "row": 64}, {"name": "", "cols": {"1": "", "2": "", "3": "", "4": "", "5": "", "6": "海伦公式", "7": ""}, "row": 65}, {"name": "", "cols": {"1": "", "2": "", "3": "", "4": "", "5": "", "6": "一元二次方程根与系数的关系，又称为韦达定理", "7": ""}, "row": 66}, {"name": "", "cols": {"1": "", "2": "等教改更新", "3": "", "4": "", "5": "", "6": "位似比", "7": ""}, "row": 69}, {"name": "", "cols": {"1": "", "2": "目前未找到", "3": "", "4": "", "5": "", "6": "", "7": ""}, "row": 70}];
+const verNames = {"1": "人教", "2": "北师", "3": "沪科", "4": "湘教", "5": "苏科", "6": "浙教", "7": "华师"};
+const verColors = {"1": "#ff6b8a", "2": "#4a90e2", "3": "#5cb85c", "4": "#f0ad4e", "5": "#9b59b6", "6": "#17a2b8", "7": "#e83e8c"};
+const verBgColors = {"1": "#ffe4ea", "2": "#e6f0ff", "3": "#e8f6e8", "4": "#fff7e6", "5": "#f3e6f7", "6": "#e0f7fa", "7": "#fce4ec"};
+const catColors = {"通用术语": "#ff6b8a", "代数": "#4a90e2", "函数": "#f0ad4e", "几何": "#5cb85c", "统计与概率": "#17a2b8", "推理与证明": "#9b59b6", "编辑备注": "#6c757d"};
+const catBgColors = {"通用术语": "#ffe4ea", "代数": "#e6f0ff", "函数": "#fff7e6", "几何": "#e8f6e8", "统计与概率": "#e0f7fa", "推理与证明": "#f3e6f7", "编辑备注": "#e9ecef"};
+
+// Categorize function
+function categorize(name) {
+  const n = name || '';
+  if (/垂直平分线|中垂线|矩形|菱形|三角形|外角|三角尺|三角板|直角|斜边|中位线|作图|等边|正三角|割线|RT|△|抛物线|对称轴|顶点式|截距|位似|有序数对|有序实数对|方向角|方位角|铅垂|海伦|笛卡尔|相似|全等|平行|中点|线段|直线|30°/.test(n)) return '几何';
+  if (/函数|抛物线|对称轴|顶点式|位似|有序数对|有序实数对/.test(n)) return '函数';
+  if (/有理式|去括号|添括号|表达式|解析式|判别式|代数式|变量|增根|系数化为|实数|分配律|完全平方|因式分解|韦达|有理式|乘|×/.test(n)) return '代数';
+  if (/统计图|全面调查|普查|平均数|中位数|众数|极差|百分比|百分|树状图|列表/.test(n)) return '统计与概率';
+  if (/证明|等式|不等式|分式|树状图|列表|如果|那么|命题/.test(n)) return '推理与证明';
+  return '通用术语';
+}
+
+function getStoredBookItems() {
+  try { return JSON.parse(localStorage.getItem('book_added_items') || '[]'); } catch(e) { return []; }
+}
+function saveStoredBookItems(items) { localStorage.setItem('book_added_items', JSON.stringify(items)); }
+
+const defaultResources = [
+  { name: "九章算术", link: "https://zh.wikipedia.org/wiki/%E4%B9%9D%E7%AB%A0%E7%AE%97%E8%A1%93", img: "", time: "系统预置" },
+  { name: "人教社官网", link: "https://www.pep.com.cn/", img: "", time: "系统预置" },
+  { name: "北师大出版社", link: "https://www.bnup.com/", img: "", time: "系统预置" }
+];
+
+// ====== Gitee 云端配置 ======
+const GITEE_API = 'https://gitee.com/api/v5';
+const GITEE_FILE_PATH = 'resources.json';
+const GITEE_BOOK_FILE_PATH = 'book_items.json';
+
+// 内置云端配置 —— 所有访问者共用，无需手动配置
+const DEFAULT_GITEE_CONFIG = {
+    giteeUser: 'yibenai',
+    giteeRepo: 'ziliaoshoulu',
+    giteeToken: '5c256881414ea0e9b4014143d52d61c9'
+};
+
+// 教材版本独立的云端配置（使用不同的仓库/文件，避免和资料收录互相覆盖）
+const DEFAULT_BOOK_CLOUD_CONFIG = {
+    giteeUser: 'yibenai',
+    giteeRepo: 'jiaocaibanben',
+    giteeToken: '5c256881414ea0e9b4014143d52d61c9'
+};
+
+function getCloudConfig() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('cloud_config') || '{}');
+        // 如果用户手动保存了自定义配置，优先使用；否则用内置默认配置
+        if (saved._custom && saved.giteeUser && saved.giteeToken) {
+            return saved;
+        }
+        return DEFAULT_GITEE_CONFIG;
+    } catch(e) { return DEFAULT_GITEE_CONFIG; }
+}
+
+// 当前是否正在使用内置默认配置
+function isUsingDefaultCloudConfig() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('cloud_config') || '{}');
+        return !(saved._custom && saved.giteeUser && saved.giteeToken);
+    } catch(e) { return true; }
+}
+function setCloudConfig(cfg) {
+    cfg._custom = true;
+    localStorage.setItem('cloud_config', JSON.stringify(cfg));
+}
+function isCloudConfigured() {
+    return true; // 内置配置始终可用
+}
+
+function updateCloudBadge() {
+    const badge = document.getElementById('cloud-badge');
+    if (!badge) return;
+    if (isCloudConfigured()) {
+        badge.className = 'badge connected';
+        badge.textContent = '已连接';
+    } else {
+        badge.className = 'badge disconnected';
+        badge.textContent = '未连接';
+    }
+}
+
+function showCloudStatus(msg, type) {
+    const el = document.getElementById('cloud-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'cfg-status show ' + (type || '');
+    setTimeout(() => { el.className = 'cfg-status'; }, 5000);
+}
+
+function fillCloudConfigInputs() {
+    const c = getCloudConfig();
+    const uEl = document.getElementById('cfg-gitee-user');
+    const rEl = document.getElementById('cfg-gitee-repo');
+    const tEl = document.getElementById('cfg-gitee-token');
+    if (uEl) uEl.value = c.giteeUser || '';
+    if (rEl) rEl.value = c.giteeRepo || 'math-resources';
+    if (tEl) tEl.value = c.giteeToken || '';
+    const hint = document.getElementById('cloud-default-hint');
+    if (hint) hint.style.display = isUsingDefaultCloudConfig() ? 'block' : 'none';
+}
+
+function toggleCloudConfig() {
+    const body = document.getElementById('cloud-config-body');
+    const hint = document.getElementById('cloud-toggle-hint');
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? 'block' : 'none';
+    hint.textContent = isHidden ? '收起 ▴' : '展开 ▾';
+    if (isHidden) fillCloudConfigInputs();
+}
+
+function saveCloudConfig() {
+    const giteeUser = document.getElementById('cfg-gitee-user').value.trim();
+    const giteeRepo = document.getElementById('cfg-gitee-repo').value.trim();
+    const giteeToken = document.getElementById('cfg-gitee-token').value.trim();
+    if (!giteeUser || !giteeToken) {
+        showCloudStatus('请填写 Gitee 用户名和 Token', 'error');
+        return;
+    }
+    setCloudConfig({ giteeUser, giteeRepo: giteeRepo || 'math-resources', giteeToken });
+    updateCloudBadge();
+    showCloudStatus('✓ 配置已保存。可点击「立即从云端拉取」测试连接。', 'success');
+    syncFromCloud().catch(()=>{});
+}
+
+function restoreDefaultCloudConfig() {
+    if (!confirm('确定恢复为系统内置默认配置吗？')) return;
+    localStorage.removeItem('cloud_config');
+    fillCloudConfigInputs();
+    updateCloudBadge();
+    showCloudStatus('已恢复默认配置', 'success');
+    syncFromCloud().catch(()=>{});
+}
+
+function clearCloudConfig() {
+    if (!confirm('确定清空云端配置吗？你的资料仍会保留在本地。')) return;
+    localStorage.removeItem('cloud_config');
+    document.getElementById('cfg-gitee-user').value = '';
+    document.getElementById('cfg-gitee-repo').value = 'math-resources';
+    document.getElementById('cfg-gitee-token').value = '';
+    const hint = document.getElementById('cloud-default-hint');
+    if (hint) hint.style.display = 'none';
+    updateCloudBadge();
+    showCloudStatus('已清空配置，数据回到纯本地模式', 'success');
+}
+
+// ====== Gitee API 封装 ======
+async function giteeReadFile(user, repo, token, filePath) {
+    filePath = filePath || GITEE_FILE_PATH;
+    const url = GITEE_API + '/repos/' + user + '/' + repo + '/contents/' + filePath + '?access_token=' + encodeURIComponent(token);
+    const resp = await fetch(url, { cache: 'no-cache' });
+    if (resp.status === 404) return null; // 文件不存在
+    if (!resp.ok) throw new Error('读取失败 (' + resp.status + ')');
+    const json = await resp.json();
+    // Gitee 对不存在的文件有时会返回空数组 []，按不存在处理
+    if (Array.isArray(json) && json.length === 0) return null;
+    // content 是 base64 编码
+    const content = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
+    return { data: JSON.parse(content), sha: json.sha };
+}
+
+async function giteeWriteFile(user, repo, token, data, sha, filePath) {
+    filePath = filePath || GITEE_FILE_PATH;
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+    const body = {
+        content: content,
+        message: '更新资料 ' + new Date().toLocaleString()
+    };
+    // Gitee 规则：创建新文件用 POST，更新已有文件用 PUT（必须带 sha）
+    const isUpdate = !!sha;
+    if (isUpdate) body.sha = sha;
+    const url = GITEE_API + '/repos/' + user + '/' + repo + '/contents/' + filePath + '?access_token=' + encodeURIComponent(token);
+    const resp = await fetch(url, {
+        method: isUpdate ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!resp.ok) {
+        const t = await resp.text();
+        throw new Error('写入失败 (' + resp.status + ') ' + user + '/' + repo + ': ' + t.substring(0, 200));
+    }
+    return true;
+}
+
+async function giteeCreateRepo(user, token, repoName) {
+    // Token 放在 URL 参数里，与 Gitee 私有仓库 API 要求保持一致
+    const url = GITEE_API + '/user/repos?access_token=' + encodeURIComponent(token);
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: repoName,
+            private: false,
+            auto_init: true
+        })
+    });
+    if (resp.status === 422) {
+        const t = await resp.text();
+        if (t.includes('已存在') || t.toLowerCase().includes('already exists')) {
+            return { exists: true };
+        }
+        throw new Error('创建仓库失败 (422): ' + t.substring(0, 200));
+    }
+    if (!resp.ok) {
+        const t = await resp.text();
+        throw new Error('创建仓库失败 (' + resp.status + '): ' + t.substring(0, 200));
+    }
+    return { exists: false };
+}
+
+async function createNewBin() {
+    const user = document.getElementById('cfg-gitee-user').value.trim();
+    const repo = document.getElementById('cfg-gitee-repo').value.trim() || 'math-resources';
+    const token = document.getElementById('cfg-gitee-token').value.trim();
+    if (!user || !token) { showCloudStatus('请先填写用户名和 Token', 'error'); return; }
+    showCloudStatus('正在创建仓库 ' + repo + '...', '');
+    try {
+        const result = await giteeCreateRepo(user, token, repo);
+        setCloudConfig({ giteeUser: user, giteeRepo: repo, giteeToken: token });
+        // 先读取文件获取 sha（如果 resources.json 已存在）
+        let sha = null;
+        try {
+            const existing = await giteeReadFile(user, repo, token);
+            if (existing) sha = existing.sha;
+        } catch(e) { /* 文件可能不存在 */ }
+        // 写入初始数据
+        const initialData = {
+            resources: getStoredResources(),
+            updatedAt: new Date().toISOString()
+        };
+        await giteeWriteFile(user, repo, token, initialData, sha);
+        updateCloudBadge();
+        if (result.exists) {
+            showCloudStatus('✓ 仓库 ' + repo + ' 已存在，已直接使用并初始化数据', 'success');
+        } else {
+            showCloudStatus('✓ 仓库 ' + repo + ' 已创建并初始化，配置已保存', 'success');
+        }
+    } catch (e) {
+        if (e.message.includes('404') || e.message.includes('Not Found')) {
+            showCloudStatus('✗ 仓库不存在。Gitee 可能保留了该名字，请换一个仓库名（如 ' + repo + '-2026）再试', 'error');
+        } else {
+            showCloudStatus('✗ ' + e.message, 'error');
+        }
+    }
+}
+
+async function syncFromCloud() {
+    const cfg = getCloudConfig();
+    if (!cfg.giteeUser || !cfg.giteeToken) { showCloudStatus('请先配置 Gitee', 'error'); return; }
+    showCloudStatus('正在从云端拉取...', '');
+    try {
+        const result = await giteeReadFile(cfg.giteeUser, cfg.giteeRepo || 'math-resources', cfg.giteeToken);
+        if (!result) {
+            showCloudStatus('云端还没有数据，添加资料后会自动上传', 'success');
+            return;
+        }
+        const list = (result.data && Array.isArray(result.data.resources)) ? result.data.resources : defaultResources;
+        // 给没有 id 的旧数据补一个稳定 id
+        list.forEach(ensureResourceId);
+        // 合并云端和本地（以云端为主，补充本地独有的）——统一用 name+link 去重
+        const local = getStoredResources();
+        const cloudKeys = new Set(list.map(r => (r.name || '') + '|' + (r.link || '')));
+        const localOnly = local.filter(r => !cloudKeys.has((r.name || '') + '|' + (r.link || '')));
+        const merged = list.concat(localOnly);
+        saveStoredResources(merged);
+        renderResources();
+        showCloudStatus('✓ 拉取成功，共 ' + list.length + ' 条资料 (更新于 ' + (result.data.updatedAt || '未知') + ')', 'success');
+    } catch (e) {
+        showCloudStatus('✗ 拉取失败: ' + e.message, 'error');
+    }
+}
+
+async function pushToCloud(items, options) {
+    options = options || {};
+    const cfg = getCloudConfig();
+    if (!cfg.giteeUser || !cfg.giteeToken) return false;
+
+    // 统一用 name+link 作为唯一标识，避免 id 格式不一致导致重复/匹配失败
+    function itemKey(r) { return (r.name || '') + '|' + (r.link || ''); }
+
+    async function tryMergeAndWrite(attempt) {
+        let cloudData = null, sha = null;
+        try {
+            const existing = await giteeReadFile(cfg.giteeUser, cfg.giteeRepo || 'math-resources', cfg.giteeToken);
+            if (existing) { cloudData = existing.data; sha = existing.sha; }
+        } catch(e) { /* 文件可能不存在，忽略 */ }
+
+        const cloudList = (cloudData && Array.isArray(cloudData.resources)) ? cloudData.resources : [];
+        const map = new Map();
+
+        // 先放入云端数据（排除本次要删除的项）
+        for (const r of cloudList) {
+            if (options.deletedKey && itemKey(r) === options.deletedKey) continue;
+            map.set(itemKey(r), r);
+        }
+        // 本地项目覆盖/补充
+        for (const r of items) {
+            map.set(itemKey(r), r);
+        }
+
+        const merged = Array.from(map.values());
+        await giteeWriteFile(cfg.giteeUser, cfg.giteeRepo || 'math-resources', cfg.giteeToken, {
+            resources: merged,
+            updatedAt: new Date().toISOString()
+        }, sha);
+        return merged.length;
+    }
+
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const count = await tryMergeAndWrite(attempt);
+            showCloudStatus('☁️ 已同步到云端（共 ' + count + ' 条）', 'success');
+            return true;
+        } catch (e) {
+            lastError = e;
+            // sha 冲突时稍等重试
+            if (attempt < 2 && (e.message.includes('409') || e.message.includes('sha'))) {
+                await new Promise(r => setTimeout(r, 300));
+                continue;
+            }
+            break;
+        }
+    }
+
+    console.error('pushToCloud 失败:', lastError);
+    showCloudStatus('☁️ 云端同步失败: ' + (lastError && lastError.message ? lastError.message : '未知错误'), 'error');
+    return false;
+}
+
+function ensureResourceId(r) {
+    if (!r.id) r.id = 'auto_' + ((r.name || '') + '|' + (r.link || '')).replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+    return r;
+}
+
+function getStoredRawResources() {
+    try {
+        const raw = localStorage.getItem('resources');
+        if (raw) {
+            const data = JSON.parse(raw);
+            if (Array.isArray(data) && data.length > 0) {
+                return data.map(ensureResourceId);
+            }
+        }
+    } catch(e) {}
+    return [...defaultResources].map(ensureResourceId);
+}
+
+function getStoredResources() {
+    return getStoredRawResources();
+}
+function saveStoredResources(items) { localStorage.setItem('resources', JSON.stringify(items)); }
+
+// ====== 教材版本云端同步 ======
+function getBookCloudConfig() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('book_cloud_config') || '{}');
+        if (saved._custom && saved.giteeUser && saved.giteeToken) return saved;
+        return DEFAULT_BOOK_CLOUD_CONFIG;
+    } catch(e) { return DEFAULT_BOOK_CLOUD_CONFIG; }
+}
+function isUsingDefaultBookCloudConfig() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('book_cloud_config') || '{}');
+        return !(saved._custom && saved.giteeUser && saved.giteeToken);
+    } catch(e) { return true; }
+}
+function setBookCloudConfig(cfg) {
+    cfg._custom = true;
+    localStorage.setItem('book_cloud_config', JSON.stringify(cfg));
+}
+function isBookCloudConfigured() { return true; }
+
+function updateBookCloudBadge() {
+    const badge = document.getElementById('book-cloud-badge');
+    if (!badge) return;
+    if (isBookCloudConfigured()) {
+        badge.className = 'badge connected';
+        badge.textContent = '已连接';
+    } else {
+        badge.className = 'badge disconnected';
+        badge.textContent = '未连接';
+    }
+}
+
+function showBookCloudStatus(msg, type) {
+    const el = document.getElementById('book-cloud-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'cfg-status show ' + (type || '');
+    setTimeout(() => { el.className = 'cfg-status'; }, 5000);
+}
+
+function fillBookCloudConfigInputs() {
+    const c = getBookCloudConfig();
+    const uEl = document.getElementById('cfg-book-gitee-user');
+    const rEl = document.getElementById('cfg-book-gitee-repo');
+    const tEl = document.getElementById('cfg-book-gitee-token');
+    if (uEl) uEl.value = c.giteeUser || '';
+    if (rEl) rEl.value = c.giteeRepo || 'jiaocaibanben';
+    if (tEl) tEl.value = c.giteeToken || '';
+    const hint = document.getElementById('book-cloud-default-hint');
+    if (hint) hint.style.display = isUsingDefaultBookCloudConfig() ? 'block' : 'none';
+}
+
+function toggleBookCloudConfig() {
+    const body = document.getElementById('book-cloud-config-body');
+    const hint = document.getElementById('book-cloud-toggle-hint');
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? 'block' : 'none';
+    hint.textContent = isHidden ? '收起 ▴' : '展开 ▾';
+    if (isHidden) fillBookCloudConfigInputs();
+}
+
+function saveBookCloudConfig() {
+    const giteeUser = document.getElementById('cfg-book-gitee-user').value.trim();
+    const giteeRepo = document.getElementById('cfg-book-gitee-repo').value.trim();
+    const giteeToken = document.getElementById('cfg-book-gitee-token').value.trim();
+    if (!giteeUser || !giteeToken) {
+        showBookCloudStatus('请填写 Gitee 用户名和 Token', 'error');
+        return;
+    }
+    setBookCloudConfig({ giteeUser, giteeRepo: giteeRepo || 'jiaocaibanben', giteeToken });
+    updateBookCloudBadge();
+    showBookCloudStatus('✓ 配置已保存。可点击「立即从云端拉取」测试连接。', 'success');
+    syncBookFromCloud().catch(()=>{});
+}
+
+function restoreDefaultBookCloudConfig() {
+    if (!confirm('确定恢复为系统内置默认配置吗？')) return;
+    localStorage.removeItem('book_cloud_config');
+    fillBookCloudConfigInputs();
+    updateBookCloudBadge();
+    showBookCloudStatus('已恢复默认配置', 'success');
+    syncBookFromCloud().catch(()=>{});
+}
+
+function clearBookCloudConfig() {
+    if (!confirm('确定清空云端配置吗？教材版本数据仍会保留在本地。')) return;
+    localStorage.removeItem('book_cloud_config');
+    document.getElementById('cfg-book-gitee-user').value = '';
+    document.getElementById('cfg-book-gitee-repo').value = 'jiaocaibanben';
+    document.getElementById('cfg-book-gitee-token').value = '';
+    const hint = document.getElementById('book-cloud-default-hint');
+    if (hint) hint.style.display = 'none';
+    updateBookCloudBadge();
+    showBookCloudStatus('已清空配置，数据回到纯本地模式', 'success');
+}
+
+async function createBookCloudRepo() {
+    const user = document.getElementById('cfg-book-gitee-user').value.trim();
+    const repo = document.getElementById('cfg-book-gitee-repo').value.trim() || 'jiaocaibanben';
+    const token = document.getElementById('cfg-book-gitee-token').value.trim();
+    if (!user || !token) { showBookCloudStatus('请先填写用户名和 Token', 'error'); return; }
+    showBookCloudStatus('正在创建仓库 ' + repo + '...', '');
+    try {
+        const result = await giteeCreateRepo(user, token, repo);
+        setBookCloudConfig({ giteeUser: user, giteeRepo: repo, giteeToken: token });
+        let sha = null;
+        try {
+            const existing = await giteeReadFile(user, repo, token, GITEE_BOOK_FILE_PATH);
+            if (existing) sha = existing.sha;
+        } catch(e) {}
+        const initialData = {
+            added: getStoredBookItems(),
+            override: getBookOverride(),
+            updatedAt: new Date().toISOString()
+        };
+        await giteeWriteFile(user, repo, token, initialData, sha, GITEE_BOOK_FILE_PATH);
+        updateBookCloudBadge();
+        showBookCloudStatus(result.exists ? '✓ 仓库 ' + repo + ' 已存在，已直接使用并初始化数据' : '✓ 仓库 ' + repo + ' 已创建并初始化，配置已保存', 'success');
+    } catch (e) {
+        if (e.message.includes('404') || e.message.includes('Not Found')) {
+            showBookCloudStatus('✗ 仓库不存在。Gitee 可能保留了该名字，请换一个仓库名（如 ' + repo + '-2026）再试', 'error');
+        } else {
+            showBookCloudStatus('✗ ' + e.message, 'error');
+        }
+    }
+}
+
+async function syncBookFromCloud() {
+    const cfg = getBookCloudConfig();
+    if (!cfg.giteeUser || !cfg.giteeToken) { showBookCloudStatus('请先配置 Gitee', 'error'); return; }
+    showBookCloudStatus('正在从云端拉取...', '');
+    try {
+        const result = await giteeReadFile(cfg.giteeUser, cfg.giteeRepo || 'jiaocaibanben', cfg.giteeToken, GITEE_BOOK_FILE_PATH);
+        if (!result) {
+            showBookCloudStatus('云端还没有数据，添加知识点后会自动上传', 'success');
+            return;
+        }
+        const data = result.data || {};
+        const cloudAdded = Array.isArray(data.added) ? data.added : [];
+        const cloudOverride = (typeof data.override === 'object' && data.override !== null) ? data.override : {};
+
+        // 合并 added：以 name 为 key，云端 + 本地合并
+        const localAdded = getStoredBookItems();
+        const map = new Map();
+        for (const r of cloudAdded) { if (r && r.name) map.set(r.name, r); }
+        for (const r of localAdded) { if (r && r.name) map.set(r.name, r); }
+        const mergedAdded = Array.from(map.values());
+        saveStoredBookItems(mergedAdded);
+
+        // 合并 override：云端和本地合并，同 key 以云端为准
+        const localOverride = getBookOverride();
+        const mergedOverride = { ...localOverride, ...cloudOverride };
+        saveBookOverride(mergedOverride);
+
+        renderBookView();
+        showBookCloudStatus('✓ 拉取成功（新增 ' + cloudAdded.length + ' 条，覆盖 ' + Object.keys(cloudOverride).length + ' 条）', 'success');
+    } catch (e) {
+        showBookCloudStatus('✗ 拉取失败: ' + e.message, 'error');
+    }
+}
+
+async function pushBookToCloud(options) {
+    options = options || {};
+    const cfg = getBookCloudConfig();
+    if (!cfg.giteeUser || !cfg.giteeToken) return false;
+
+    async function tryWrite(attempt) {
+        let cloudData = null, sha = null;
+        try {
+            const existing = await giteeReadFile(cfg.giteeUser, cfg.giteeRepo || 'jiaocaibanben', cfg.giteeToken, GITEE_BOOK_FILE_PATH);
+            if (existing) { cloudData = existing.data; sha = existing.sha; }
+        } catch(e) {}
+
+        const cloudAdded = (cloudData && Array.isArray(cloudData.added)) ? cloudData.added : [];
+        const cloudOverride = (cloudData && typeof cloudData.override === 'object' && cloudData.override !== null) ? cloudData.override : {};
+
+        // 合并 added
+        const localAdded = getStoredBookItems();
+        const addedMap = new Map();
+        for (const r of cloudAdded) { if (r && r.name) addedMap.set(r.name, r); }
+        for (const r of localAdded) { if (r && r.name) addedMap.set(r.name, r); }
+        // 如果有明确要删除的 name，从云端移除
+        if (options.deletedName) addedMap.delete(options.deletedName);
+        const mergedAdded = Array.from(addedMap.values());
+
+        // 合并 override
+        const localOverride = getBookOverride();
+        const mergedOverride = { ...cloudOverride, ...localOverride };
+        if (options.deletedName) mergedOverride[options.deletedName] = null;
+
+        await giteeWriteFile(cfg.giteeUser, cfg.giteeRepo || 'jiaocaibanben', cfg.giteeToken, {
+            added: mergedAdded,
+            override: mergedOverride,
+            updatedAt: new Date().toISOString()
+        }, sha, GITEE_BOOK_FILE_PATH);
+        return mergedAdded.length + Object.keys(mergedOverride).length;
+    }
+
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const count = await tryWrite(attempt);
+            showBookCloudStatus('☁️ 已同步到云端（共 ' + count + ' 条）', 'success');
+            return true;
+        } catch (e) {
+            lastError = e;
+            if (attempt < 2 && (e.message.includes('409') || e.message.includes('sha'))) {
+                await new Promise(r => setTimeout(r, 300));
+                continue;
+            }
+            break;
+        }
+    }
+    console.error('pushBookToCloud 失败:', lastError);
+    showBookCloudStatus('☁️ 云端同步失败: ' + (lastError && lastError.message ? lastError.message : '未知错误'), 'error');
+    return false;
+}
+
+function getBookOverride() {
+  try { return JSON.parse(localStorage.getItem('book_override') || '{}'); } catch(e) { return {}; }
+}
+function saveBookOverride(obj) { localStorage.setItem('book_override', JSON.stringify(obj)); }
+
+function allBookItems() {
+  const override = getBookOverride();
+  let items = [...bookData.filter(i => i.name), ...getStoredBookItems()];
+  const map = new Map();
+  for (const item of items) {
+    if (override[item.name] === null) continue;
+    if (override[item.name]) {
+      map.set(item.name, override[item.name]);
+    } else {
+      map.set(item.name, item);
+    }
+  }
+  for (const [key, val] of Object.entries(override)) {
+    if (val && !map.has(key)) {
+      map.set(key, val);
+    }
+  }
+  return Array.from(map.values());
+}
+
+// ====== NAVIGATION ======
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  el.classList.add('active');
+  if (tabId === 'tab-textbook') {
+    renderBookView();
+    updateBookCloudBadge();
+    if (isBookCloudConfigured()) {
+      syncBookFromCloud().catch(()=>{});
+    }
+  }
+  if (tabId === 'tab-resources') {
+    renderResources();
+    updateCloudBadge();
+    if (isCloudConfigured()) {
+      syncFromCloud().catch(()=>{});
+    }
+  }
+  if (tabId === 'tab-search') doGlobalSearch();
+}
+
+// ====== TOAST ======
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  t.style.animation = 'none'; t.offsetHeight;
+  t.style.animation = 'toastIn 0.3s ease, toastOut 0.3s ease 2s forwards';
+  setTimeout(() => { t.style.display = 'none'; }, 2400);
+}
+
+// ====== BOOK MODE ======
+let bookMode = 'all';
+let bookCatFilter = '全部';
+
+function setBookMode(mode) {
+  bookMode = mode;
+  document.getElementById('btn-view-all').classList.toggle('active', mode === 'all');
+  document.getElementById('btn-view-add').classList.toggle('active', mode === 'add');
+  document.getElementById('book-view-all').style.display = mode === 'all' ? 'block' : 'none';
+  document.getElementById('book-view-add').style.display = mode === 'add' ? 'block' : 'none';
+  document.getElementById('tb-chips').style.display = mode === 'all' ? 'flex' : 'none';
+  document.getElementById('tb-search').style.display = mode === 'all' ? 'block' : 'none';
+  document.querySelector('#tab-textbook .search-wrap').style.display = mode === 'all' ? 'flex' : 'none';
+  if (mode === 'all') renderBookView();
+}
+
+function renderBookView() {
+  const query = (document.getElementById('tb-search').value || '').toLowerCase();
+  const items = allBookItems();
+  const filtered = items.filter(item => {
+    if (bookCatFilter !== '全部' && categorize(item.name) !== bookCatFilter) return false;
+    if (!query) return true;
+    if (item.name.toLowerCase().includes(query)) return true;
+    const cols = item.cols || {};
+    for (let i = 1; i <= 7; i++) {
+      if ((cols[i] || '').toLowerCase().includes(query)) return true;
+    }
+    return false;
+  });
+
+  // Dashboard
+  const cats = {};
+  items.forEach(item => {
+    const c = categorize(item.name);
+    cats[c] = (cats[c] || 0) + 1;
+  });
+  const totalCats = Object.keys(cats).length;
+  document.getElementById('tb-dashboard').innerHTML = `
+    <div class="dash-card"><div class="num">${filtered.length}</div><div class="label">对比项</div></div>
+    <div class="dash-card"><div class="num">7</div><div class="label">教材版本</div></div>
+    <div class="dash-card"><div class="num">${totalCats}</div><div class="label">分类板块</div></div>
+    <div class="dash-card"><div class="num">2026</div><div class="label">最新更新</div></div>
+  `;
+
+  // Chips
+  const catList = ['全部', ...Object.keys(cats)];
+  document.getElementById('tb-chips').innerHTML = catList.map(c => {
+    const count = c === '全部' ? items.length : (cats[c] || 0);
+    return `<span class="chip ${bookCatFilter === c ? 'active' : ''}" onclick="bookCatFilter='${c}'; renderBookView();">
+      ${c}<span class="count">${count}</span>
+    </span>`;
+  }).join('');
+
+  // Cards
+  document.getElementById('book-cards').innerHTML = filtered.map(item => renderCard(item)).join('');
+}
+
+function renderCard(item) {
+  const cat = categorize(item.name);
+  const catColor = catColors[cat] || '#6c757d';
+  const catBg = catBgColors[cat] || '#e9ecef';
+  const cols = item.cols || {};
+
+  let rows = '';
+  for (let i = 1; i <= 7; i++) {
+    const txt = (cols[i] || '').trim();
+    if (!txt) continue;
+    rows += `
+      <div class="ver-row">
+        <span class="ver-tag" style="background:${verBgColors[i]}; color:${verColors[i]};">${verNames[i]}</span>
+        <span class="ver-text">${txt}</span>
+      </div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">${item.name}</div>
+        <span class="card-cat" style="background:${catBg}; color:${catColor};">${cat}</span>
+      </div>
+      <div class="card-body">${rows}</div>
+      <div class="card-actions">
+        <button class="btn-edit" onclick="openEditModal('${item.name}')">✏️ 修改</button>
+        <button class="btn-del" onclick="deleteBookItem('${item.name}')">🗑 删除</button>
+      </div>
+    </div>`;
+}
+
+function addBookItem() {
+  const name = document.getElementById('add-name').value.trim();
+  if (!name) { showToast('请输入知识点名称'); return; }
+  const cols = {};
+  for (let i = 1; i <= 7; i++) {
+    const v = document.getElementById('add-v' + i).value.trim();
+    if (v) cols[i] = v;
+  }
+  const existing = bookData.find(i => i.name === name);
+  if (existing) {
+    showToast('该知识点已存在，请使用修改功能'); return;
+  }
+  const items = getStoredBookItems();
+  items.push({ name, cols });
+  saveStoredBookItems(items);
+
+  document.getElementById('add-name').value = '';
+  for (let i = 1; i <= 7; i++) document.getElementById('add-v' + i).value = '';
+
+  showToast('添加成功！');
+  setBookMode('all');
+
+  // 后台同步到云端
+  pushBookToCloud().then(ok => {
+    if (ok) showToast('☁️ 已同步到云端');
+  });
+}
+
+function openEditModal(name) {
+  const item = allBookItems().find(i => i.name === name);
+  if (!item) { showToast('未找到该知识点'); return; }
+  const cols = item.cols || {};
+  let verInputs = '';
+  for (let i = 1; i <= 7; i++) {
+    verInputs += `
+      <div><span class="vi-label" style="color:${verColors[i]}">${verNames[i]}</span>
+      <input type="text" id="edit-v${i}" value="${(cols[i] || '').replace(/"/g, '&quot;')}" placeholder="描述…"></div>`;
+  }
+  const modal = document.getElementById('edit-modal');
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeEditModal()">
+      <div class="modal-box">
+        <h3 style="font-size:20px;color:var(--gray-800);margin-bottom:24px;font-weight:700;">修改知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="edit-name" value="${item.name.replace(/"/g, '&quot;')}">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">${verInputs}</div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="saveEdit('${item.name.replace(/'/g, "\'")}')">保存修改</button>
+          <button class="btn-cancel" onclick="closeEditModal()">取消</button>
+        </div>
+      </div>
+    </div>`;
+  modal.style.display = 'block';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').style.display = 'none';
+}
+
+function saveEdit(originalName) {
+  const newName = document.getElementById('edit-name').value.trim();
+  if (!newName) { showToast('知识点名称不能为空'); return; }
+  const cols = {};
+  for (let i = 1; i <= 7; i++) {
+    const v = document.getElementById('edit-v' + i).value.trim();
+    if (v) cols[i] = v;
+  }
+  const override = getBookOverride();
+  const updated = { name: newName, cols };
+  if (originalName !== newName) {
+    override[originalName] = null;
+    override[newName] = updated;
+  } else {
+    override[originalName] = updated;
+  }
+  saveBookOverride(override);
+  closeEditModal();
+  showToast('修改已保存');
+  renderBookView();
+
+  // 后台同步到云端
+  pushBookToCloud().then(ok => {
+    if (ok) showToast('☁️ 已同步到云端');
+  });
+}
+
+function deleteBookItem(name) {
+  if (!confirm('确定要删除「' + name + '」吗？')) return;
+
+  // 如果是用户自己添加的，直接从 added 中移除
+  const added = getStoredBookItems();
+  const addedIndex = added.findIndex(i => i.name === name);
+  if (addedIndex >= 0) {
+    added.splice(addedIndex, 1);
+    saveStoredBookItems(added);
+  }
+
+  // 如果是内置数据或修改过的数据，用 override 标记为已删除
+  const override = getBookOverride();
+  override[name] = null;
+  saveBookOverride(override);
+  showToast('已删除');
+  renderBookView();
+
+  // 后台同步到云端
+  pushBookToCloud({ deletedName: name }).then(ok => {
+    if (ok) showToast('☁️ 已同步到云端');
+  });
+}
+
+// ====== RESOURCES ======
+let resFormVisible = false;
+
+function toggleResourceForm(show) {
+  resFormVisible = show !== undefined ? show : !resFormVisible;
+  document.getElementById('res-add-form').style.display = resFormVisible ? 'block' : 'none';
+}
+
+function handleImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('res-img').value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addResource() {
+  const name = document.getElementById('res-name').value.trim();
+  const link = document.getElementById('res-link').value.trim();
+  const img = document.getElementById('res-img').value.trim();
+  if (!name) { showToast('请输入资料名称'); return; }
+
+  const resources = getStoredResources();
+  resources.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2), name, link, img, time: new Date().toLocaleString() });
+  saveStoredResources(resources);
+
+  document.getElementById('res-name').value = '';
+  document.getElementById('res-link').value = '';
+  document.getElementById('res-img').value = '';
+  document.getElementById('res-img-file').value = '';
+  toggleResourceForm(false);
+  showToast('资料添加成功！');
+  renderResources();
+
+  // 后台同步到云端
+  pushToCloud(resources).then(ok => {
+    if (ok) showToast('☁️ 已同步到云端');
+  });
+}
+
+function deleteResource(index) {
+  const resources = getStoredResources();
+  const item = resources[index];
+  const deletedKey = item ? ((item.name || '') + '|' + (item.link || '')) : null;
+  resources.splice(index, 1);
+  saveStoredResources(resources);
+  showToast('已删除');
+  renderResources();
+
+  pushToCloud(resources, { deletedKey: deletedKey }).then(ok => {
+    if (ok) showToast('☁️ 已同步到云端');
+  });
+}
+
+function exportResources() {
+  const data = {
+    resources: getStoredResources(),
+    book_added_items: getStoredBookItems(),
+    book_override: getBookOverride(),
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '数学编辑部数据备份_' + new Date().toLocaleDateString() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('数据已导出');
+}
+
+function importResources(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.resources) {
+        // 合并而非覆盖：按 name+link 去重
+        const existing = getStoredResources();
+        const existingKeys = new Set(existing.map(r => (r.name||'') + '|' + (r.link||'')));
+        const newItems = data.resources.filter(r => !existingKeys.has((r.name||'') + '|' + (r.link||'')));
+        const merged = existing.concat(newItems);
+        saveStoredResources(merged);
+        renderResources();
+        showToast('导入成功，新增 ' + newItems.length + ' 条资料（合并模式，不覆盖已有）');
+      } else {
+        showToast('导入成功');
+      }
+      if (data.book_added_items) saveStoredBookItems(data.book_added_items);
+      if (data.book_override) saveBookOverride(data.book_override);
+      // Re-render book view if on that tab
+      if (document.getElementById('tab-textbook').style.display !== 'none') {
+        renderBookView();
+      }
+      showToast('数据导入成功');
+    } catch(err) {
+      showToast('导入失败：文件格式不正确');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function renderResources() {
+  const query = (document.getElementById('res-search').value || '').toLowerCase();
+  let resources = getStoredResources();
+  if (query) {
+    resources = resources.filter(r =>
+      r.name.toLowerCase().includes(query) ||
+      (r.link || '').toLowerCase().includes(query)
+    );
+  }
+
+  const grid = document.getElementById('res-grid');
+  const empty = document.getElementById('res-empty');
+
+  if (resources.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  grid.innerHTML = resources.map((r, i) => `
+    <div class="resource-card">
+      <div class="resource-img">
+        ${r.img
+          ? `<img src="${r.img}" alt="${r.name}" onerror="this.parentElement.innerHTML='<span class=\'placeholder\'>🖼️</span>'">`
+          : '<span class="placeholder">🖼️</span>'}
+      </div>
+      <div class="resource-info">
+        <div class="resource-name">${r.name}</div>
+        ${r.link ? `<a class="resource-link" href="${r.link}" target="_blank">${r.link}</a>` : ''}
+        <div class="resource-actions">
+          <button onclick="window.open('${r.link}', '_blank')">🔗 打开</button>
+          <button class="btn-del" onclick="deleteResource(${i})">🗑 删除</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ====== GLOBAL SEARCH ======
+function doGlobalSearch() {
+  const query = (document.getElementById('global-search').value || '').toLowerCase();
+  const results = document.getElementById('global-results');
+  const empty = document.getElementById('global-empty');
+
+  if (!query) {
+    results.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  const found = [];
+
+  // Search book data
+  allBookItems().forEach(item => {
+    if (item.name.toLowerCase().includes(query)) {
+      found.push({ source: '教材版本', title: item.name, desc: getItemDesc(item) });
+      return;
+    }
+    const cols = item.cols || {};
+    for (let i = 1; i <= 7; i++) {
+      const txt = (cols[i] || '').toLowerCase();
+      if (txt.includes(query)) {
+        found.push({ source: '教材版本', title: item.name + ' (' + verNames[i] + ')', desc: (cols[i] || '').substring(0, 200) });
+        return;
+      }
+    }
+  });
+
+  // Search resources
+  getStoredResources().forEach(r => {
+    if (r.name.toLowerCase().includes(query) || (r.link || '').toLowerCase().includes(query)) {
+      found.push({ source: '资料收录', title: r.name, desc: r.link || '', link: r.link });
+    }
+  });
+
+  if (found.length === 0) {
+    results.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>未找到相关结果</p></div>';
+    return;
+  }
+
+  results.innerHTML = found.map(f => `
+    <div class="search-result-item">
+      <div class="result-source">${f.source}</div>
+      <div class="result-title">${f.title}</div>
+      <div class="result-desc">${f.desc}</div>
+      ${f.link ? `<a href="${f.link}" target="_blank" style="font-size:13px; color:var(--blue);">${f.link}</a>` : ''}
+    </div>
+  `).join('');
+}
+
+function getItemDesc(item) {
+  const cols = item.cols || {};
+  const parts = [];
+  for (let i = 1; i <= 7; i++) {
+    const txt = (cols[i] || '').trim();
+    if (txt) parts.push(verNames[i] + ': ' + txt.substring(0, 80));
+  }
+  return parts.slice(0, 3).join(' | ');
+}
+
+// ====== INIT ======
+renderBookView();
+renderResources();
+fillCloudConfigInputs();
+updateCloudBadge();
+fillBookCloudConfigInputs();
+updateBookCloudBadge();
+// 页面加载时自动从云端拉取教材版本数据
+syncBookFromCloud().catch(()=>{});
+</script>
+</body>
+</html>
