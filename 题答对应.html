@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正文与答案题答对应</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="libs/mammoth.min.js" onerror="loadScriptFallback(this,'https://unpkg.com/mammoth@1.6.0/browser/mammoth.browser.min.js')"></script>
+    <script src="libs/jszip.min.js" onerror="loadScriptFallback(this,'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js')"></script>
+    <script src="libs/encoding.min.js" onerror="loadScriptFallback(this,'https://unpkg.com/encoding-japanese@2.0.0/encoding.min.js')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" onerror="loadScriptFallback(this,'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js')"></script>
+    <script>
+        function loadScriptFallback(script, fallbackUrl) {
+            console.warn('CDN 脚本加载失败，尝试 fallback:', fallbackUrl);
+            const newScript = document.createElement('script');
+            newScript.src = fallbackUrl;
+            newScript.onload = function() { console.log('fallback 加载成功:', fallbackUrl); };
+            newScript.onerror = function() { console.error('fallback 也失败:', fallbackUrl); };
+            script.parentNode.insertBefore(newScript, script.nextSibling);
+        }
+    </script>
+    <style>
+        :root {
+            --primary: #ff6b8a;
+            --primary-light: #ff5270;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --bg: #fff5f8;
+            --card-bg: #ffffff;
+            --border: #ffc4d2;
+            --text: #2c3e50;
+            --text-light: #7f8c8d;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --pink: #ff6b8a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-top: 48px;
+        }
+        .header-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            height: 48px;
+            background: var(--pink);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; text-decoration: none;
+            box-shadow: 0 2px 8px rgba(255,107,138,0.3);
+        }
+        .header-bar span {
+            font-size: 18px; font-weight: 700; color: #fff;
+            letter-spacing: 3px;
+        }
+        .header-bar:hover { background: #ff5270; }
+        header {
+            background: #ffffff;
+            color: var(--primary);
+            padding: 28px 24px;
+            text-align: center;
+            border-bottom: 2px solid #ffe4ea;
+        }
+        header h1 { font-size: 1.6rem; margin-bottom: 6px; }
+        header p { font-size: 0.9rem; opacity: 0.8; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px 20px; }
+        .upload-section {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+        .upload-section h2 {
+            font-size: 1.15rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .upload-section h2 .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-size: 0.85rem;
+        }
+        .upload-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 700px) { .upload-zones { grid-template-columns: 1fr; } }
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 36px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            background: #fafbfc;
+            position: relative;
+        }
+        .drop-zone:hover { border-color: var(--primary); background: #fff0f5; }
+        .drop-zone.dragover { border-color: var(--primary); background: #ffe4ea; transform: scale(1.01); }
+        .drop-zone.has-file { border-color: var(--success); border-style: solid; background: #f0fbf4; }
+        .drop-zone .icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .drop-zone .title { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+        .drop-zone .hint { font-size: 0.8rem; color: var(--text-light); }
+        .drop-zone .filename { margin-top: 8px; font-size: 0.85rem; color: var(--success); font-weight: 600; word-break: break-all; }
+        .drop-zone input[type="file"] { display: none; }
+        .action-bar { display: flex; justify-content: center; gap: 12px; margin-top: 24px; }
+        .btn { padding: 12px 36px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-primary:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .btn-outline { background: white; color: var(--primary); border: 1px solid var(--border); }
+        .btn-outline:hover { border-color: var(--primary); }
+        .loading-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4); z-index: 999;
+            justify-content: center; align-items: center;
+        }
+        .loading-overlay.show { display: flex; }
+        .loading-box { background: white; padding: 36px 48px; border-radius: 14px; text-align: center; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #e0e6ed; border-top-color: var(--primary);
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .results-section { display: none; }
+        .results-section.show { display: block; }
+        .summary-bar { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+        .summary-card {
+            flex: 1; min-width: 130px; background: var(--card-bg);
+            border-radius: 10px; padding: 18px 12px; text-align: center;
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+        }
+        .summary-card .number { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+        .summary-card .label { font-size: 0.8rem; color: var(--text-light); margin-top: 2px; }
+        .summary-card.success .number { color: var(--success); }
+        .summary-card.danger .number { color: var(--accent); }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+        .toolbar input { flex: 1; min-width: 180px; padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; outline: none; transition: border-color 0.2s; }
+        .toolbar input:focus { border-color: var(--primary); }
+        .filter-btn { padding: 7px 16px; border: 1px solid var(--border); border-radius: 8px; background: white; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; color: var(--text); }
+        .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .table-wrap { background: var(--card-bg); border-radius: 12px; overflow: visible; box-shadow: var(--shadow); border: 1px solid var(--border); }
+        .table-scroll { overflow: visible; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; table-layout: fixed; }
+        thead tr { background: var(--primary); color: white; }
+        thead th { padding: 13px 14px; text-align: left; font-weight: 600; white-space: nowrap; }
+        tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+        tbody tr:hover { background: #fff5f8; }
+        tbody td { padding: 13px 14px; vertical-align: top; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; }
+        .q-num { font-weight: 700; color: var(--primary); white-space: nowrap; }
+        .answer-text { font-weight: 600; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+        .badge.match { background: #e8f8f0; color: var(--success); border: 1px solid #27ae60; }
+        .badge.mismatch { background: #fef0ed; color: var(--accent); border: 1px solid #e74c3c; }
+        .answer-detail { margin-top: 4px; font-size: 0.78rem; color: #666; line-height: 1.45; }
+        .mismatch-reason { color: var(--accent); font-size: 0.78rem; margin-top: 4px; }
+        .mismatch-section { margin-top: 20px; background: #fef0ed; border: 1px solid var(--accent); border-radius: 12px; padding: 20px 24px; }
+        .mismatch-section h3 { color: var(--accent); font-size: 1rem; margin-bottom: 10px; }
+        .mismatch-section .all-good { text-align: center; padding: 14px; font-size: 0.95rem; color: var(--success); font-weight: 600; }
+        .error-msg { display: none; background: #fef0ed; border: 1px solid var(--accent); border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; color: var(--accent); font-size: 0.9rem; }
+        .error-msg.show { display: block; }
+        .debug-section { margin-bottom: 16px; background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+        .debug-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; cursor: pointer; background: #fff5f8; transition: background 0.2s; }
+        .debug-header:hover { background: #ffe4ea; }
+        .debug-header h3 { font-size: 0.9rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .debug-header .toggle { font-size: 0.8rem; color: var(--text-light); }
+        .debug-body { display: none; padding: 0 20px 20px; }
+        .debug-body.show { display: block; }
+        .debug-text-area { width: 100%; min-height: 200px; max-height: 500px; overflow-y: auto; padding: 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-family: "Consolas", "Monaco", monospace; white-space: pre-wrap; word-break: break-all; background: #fafbfc; color: var(--text); line-height: 1.5; }
+        .debug-tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 2px solid var(--border); }
+        .debug-tab { padding: 8px 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; color: var(--text-light); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .debug-tab:hover { color: var(--primary); }
+        .debug-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .debug-warn { margin: 12px 0; padding: 10px 14px; background: #fff7e6; border-left: 3px solid var(--warning); border-radius: 6px; font-size: 0.8rem; color: #b8860b; }
+        .ocr-progress { margin-top: 8px; }
+        .ocr-progress-bar { width: 100%; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+        .ocr-progress-fill { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.3s; }
+        .ocr-progress-text { font-size: 0.78rem; color: var(--text-light); margin-top: 4px; }
+        footer { text-align: center; padding: 20px; color: var(--text-light); font-size: 0.78rem; }
+    </style>
+</head>
+<body>
+
+<a href="index.html" class="header-bar"><span>智能校对工具</span></a>
+
+<header>
+    <h1>正文与答案题答对应</h1>
+    <p>上传正文与答案文件（支持 PDF、TXT、Word docx），自动提取题目、匹配核对并生成报告</p>
+</header>
+
+<div class="container">
+    <div class="upload-section">
+        <h2><span class="num">1</span> 上传文件</h2>
+        <div class="upload-zones">
+            <div class="drop-zone" id="zoneMain" onclick="document.getElementById('inputMain').click()">
+                <div class="icon">📄</div>
+                <div class="title">上传正文文件</div>
+                <div class="hint">支持 PDF / TXT / Word，点击或拖拽到此处</div>
+                <div class="filename" id="fileNameMain"></div>
+                <input type="file" id="inputMain" accept=".pdf,.txt,.docx" onchange="onFileSelected('main', this)">
+            </div>
+            <div class="drop-zone" id="zoneAnswer" onclick="document.getElementById('inputAnswer').click()">
+                <div class="icon">✅</div>
+                <div class="title">上传答案文件</div>
+                <div class="hint">支持 PDF / TXT / Word，点击或拖拽到此处</div>
+                <div class="filename" id="fileNameAnswer"></div>
+                <input type="file" id="inputAnswer" accept=".pdf,.txt,.docx" onchange="onFileSelected('answer', this)">
+            </div>
+        </div>
+    </div>
+    <div class="upload-section">
+        <h2><span class="num">2</span> 开始核对</h2>
+        <p style="color:var(--text-light); font-size:0.85rem; margin-bottom:16px;">
+            确认文件已上传后，点击下方按钮开始自动提取题目并与答案逐题核对。
+        </p>
+        <div class="action-bar">
+            <button class="btn btn-primary" id="btnCheck" onclick="startCheck()" disabled>开始核对</button>
+            <button class="btn btn-outline" onclick="resetAll()">重置</button>
+        </div>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="debug-section" id="debugSection" style="display:none;">
+        <div class="debug-header" onclick="toggleDebugBody()">
+            <h3>📝 查看提取文本</h3>
+            <span class="toggle" id="debugToggle">展开 ▼</span>
+        </div>
+        <div class="debug-body" id="debugBody">
+            <div class="debug-tabs">
+                <div class="debug-tab active" onclick="switchDebugTab('main', this)">正文文本</div>
+                <div class="debug-tab" onclick="switchDebugTab('answer', this)">答案文本</div>
+            </div>
+            <div id="debugWarn"></div>
+            <div class="debug-text-area" id="debugTextMain"></div>
+            <div class="debug-text-area" id="debugTextAnswer" style="display:none;"></div>
+        </div>
+    </div>
+    <div class="results-section" id="resultsSection">
+        <h2 style="font-size:1.15rem; color:var(--primary); margin-bottom:16px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary);color:white;font-size:0.85rem;margin-right:8px;">3</span>
+            核对报告
+        </h2>
+        <div class="summary-bar" id="summaryBar"></div>
+        <div id="setInfoBar" style="display:none; margin-bottom:16px; padding:12px 20px; background:var(--card-bg); border-radius:10px; box-shadow:var(--shadow); border:1px solid var(--border); font-size:0.85rem;">
+            <span style="color:var(--text-light);">检测到节：</span>
+            <span id="setInfoText" style="font-weight:600; color:var(--primary);"></span>
+        </div>
+        <div id="sectionStatsBar" style="display:none; margin-bottom:16px;"></div>
+        <div class="toolbar">
+            <input type="text" id="searchInput" placeholder="搜索题号、题目内容或答案..." oninput="filterTable()">
+            <select id="setFilter" onchange="filterTable()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;outline:none;cursor:pointer;">
+                <option value="all">全部节</option>
+            </select>
+            <button class="filter-btn active" onclick="filterByType('all', this)">全部</button>
+            <button class="filter-btn" onclick="filterByType('mismatch', this)">仅看不匹配</button>
+            <button class="btn btn-outline" onclick="exportCSV()" style="padding:7px 16px;font-size:0.82rem;">导出 CSV</button>
+        </div>
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th style="width:120px">节</th>
+                            <th style="width:60px">题号</th>
+                            <th>正文题目核心内容</th>
+                            <th style="width:220px">答案</th>
+                            <th style="width:100px">匹配状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="mismatch-section" id="mismatchSection">
+            <h3>⚠ 不对应 / 不匹配项汇总</h3>
+            <div id="mismatchContent"></div>
+        </div>
+    </div>
+    <footer>正文与答案题答对应 &copy; 2026</footer>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+        <div class="spinner"></div>
+        <div style="font-size:0.9rem; color:var(--text);" id="loadingText">正在提取文本并核对...</div>
+        <div class="ocr-progress" id="ocrProgress" style="display:none;">
+            <div class="ocr-progress-bar"><div class="ocr-progress-fill" id="ocrProgressFill" style="width:0%"></div></div>
+            <div class="ocr-progress-text" id="ocrProgressText"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ====== pdf.js 配置 ======
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ====== 全局变量 ======
+let extractedMainText = '';
+let extractedAnswerText = '';
+
+// ====== 文本质量检测 ======
+function checkTextQuality(text) {
+    if (!text || text.trim().length < 20) return { ok: false, reason: 'empty' };
+    const total = text.length;
+    // 统计可读字符（中文、字母、数字、常见标点）
+    const readable = (text.match(/[\u4e00-\u9fff\u3000-\u303fa-zA-Z0-9\s\.\,\;\:\!\?\(\)\[\]\{\}\"\'\-\u3001\u3002\uff0c\uff0e\uff1b\uff1a\uff01\uff1f\u201c\u201d\u3010\u3011]/g) || []).length;
+    const ratio = readable / total;
+    // 统计控制字符
+    const controlChars = (text.match(/[\x00-\x1f\x80-\x9f]/g) || []).length;
+    const controlRatio = controlChars / total;
+    return { ok: ratio > 0.6 && controlRatio < 0.15, reason: ratio <= 0.6 ? 'garbled' : (controlRatio >= 0.15 ? 'control' : 'ok'), ratio, controlRatio };
+}
+
+// ====== OCR 提取 ======
+async function ocrPdf(file, label) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    const totalPages = pdf.numPages;
+
+    // 创建 worker
+    const worker = await Tesseract.createWorker(['chi_sim', 'eng']);
+    await worker.setParameters({
+        tessedit_pageseg_mode: Tesseract.PSM.AUTO
+    });
+
+    for (let i = 1; i <= totalPages; i++) {
+        updateLoadingText(`${label} OCR 识别中... 第 ${i}/${totalPages} 页`);
+        updateOcrProgress((i - 1) / totalPages * 100, `${label} 第 ${i}/${totalPages} 页`);
+
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+        const result = await worker.recognize(canvas);
+        fullText += result.data.text + '\n';
+    }
+
+    await worker.terminate();
+    updateOcrProgress(100, `${label} OCR 完成`);
+    return fullText;
+}
+
+// ====== UI 更新 ======
+function updateLoadingText(text) {
+    const el = document.getElementById('loadingText');
+    if (el) el.textContent = text;
+}
+function updateOcrProgress(percent, text) {
+    const bar = document.getElementById('ocrProgress');
+    const fill = document.getElementById('ocrProgressFill');
+    const txt = document.getElementById('ocrProgressText');
+    if (percent > 0) { bar.style.display = 'block'; }
+    if (fill) fill.style.width = percent + '%';
+    if (txt && text) txt.textContent = text;
+}
+
+// ====== 调试文本面板 ======
+function toggleDebugBody() {
+    const body = document.getElementById('debugBody');
+    const toggle = document.getElementById('debugToggle');
+    if (body.classList.contains('show')) {
+        body.classList.remove('show');
+        toggle.textContent = '展开 ▼';
+    } else {
+        body.classList.add('show');
+        toggle.textContent = '收起 ▲';
+    }
+}
+function switchDebugTab(tab, el) {
+    document.querySelectorAll('.debug-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('debugTextMain').style.display = tab === 'main' ? 'block' : 'none';
+    document.getElementById('debugTextAnswer').style.display = tab === 'answer' ? 'block' : 'none';
+}
+function showDebugPanel(mainText, answerText, mainQuality, answerQuality) {
+    extractedMainText = mainText;
+    extractedAnswerText = answerText;
+    const panel = document.getElementById('debugSection');
+    const warnEl = document.getElementById('debugWarn');
+
+    let warnHtml = '';
+    if (!mainQuality.ok) {
+        warnHtml += `<div class="debug-warn">⚠ 正文文本提取质量不佳（可读字符率 ${Math.round(mainQuality.ratio * 100)}%），已${mainQuality.reason === 'empty' ? '尝试OCR识别' : '使用OCR识别'}。如仍不理想，可能是PDF为扫描件或字体编码特殊。</div>`;
+    }
+    if (!answerQuality.ok) {
+        warnHtml += `<div class="debug-warn">⚠ 答案文本提取质量不佳（可读字符率 ${Math.round(answerQuality.ratio * 100)}%），已${answerQuality.reason === 'empty' ? '尝试OCR识别' : '使用OCR识别'}。如仍不理想，可能是PDF为扫描件或字体编码特殊。</div>`;
+    }
+    warnEl.innerHTML = warnHtml;
+
+    document.getElementById('debugTextMain').textContent = mainText.substring(0, 5000) + (mainText.length > 5000 ? '\n... (仅显示前5000字符)' : '');
+    document.getElementById('debugTextAnswer').textContent = answerText.substring(0, 5000) + (answerText.length > 5000 ? '\n... (仅显示前5000字符)' : '');
+    panel.style.display = 'block';
+}
+
+// ====== 常量 ======
+const ROMAN_PATTERN = '[\u2160\u2161\u2162\u2163\u2164\u2165\u2166\u2167\u2168\u2169\u2170\u2171\u2172\u2173\u2174\u2175\u2176\u2177\u2178\u2179]';
+const SET_MARKERS = ['\u6838\u5fc3\u8003\u70b9\u5377','\u9ad8\u9891\u6613\u9519\u5377','\u671f\u672b\u9884\u6d4b\u5377','\u671f\u672b\u9006\u88ad\u5377','\u6a21\u62df\u5377','\u9884\u6d4b\u5377','\u6613\u9519\u5377','\u8003\u70b9\u5377','\u51b2\u523a\u5377','\u771f\u9898\u5377','\u57fa\u7840\u5377','\u63d0\u5347\u5377','\u62d3\u5c55\u5377'];
+const TOPIC_KEYWORDS = ['\u5f53\u4ee3\u9752\u5e74','\u5b66\u4e60\u7b56\u7565','\u8bb0\u5fc6\u65b9\u6cd5','\u7406\u8d22\u89c4\u5212','\u9898\u578b\u65e5','\u6eda\u52a8\u590d\u4e60','\u699c\u6837\u529b\u91cf','\u4e3b\u9898\u5199\u4f5c'];
+
+// ====== PDF 文本提取 ======
+async function extractPdfText(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        let lastY = null;
+        for (const item of content.items) {
+            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 2) {
+                text += '\n';
+            }
+            text += item.str;
+            lastY = item.transform[5];
+        }
+        text += '\n';
+    }
+    return text;
+}
+
+// ====== TXT 文本提取（多编码回退，选最优） ======
+async function extractTxtText(file) {
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+
+    const candidates = [];
+
+    // 方案 1: 严格 UTF-8
+    try {
+        candidates.push({ text: new TextDecoder('utf-8', { fatal: true }).decode(bytes), name: 'UTF-8' });
+    } catch (e) {}
+
+    // 方案 2+: encoding-japanese 转换
+    if (typeof Encoding !== 'undefined') {
+        const encList = ['GB18030', 'GBK', 'BIG5', 'SJIS', 'EUCJP', 'EUCKR', 'EUCTW'];
+        for (const enc of encList) {
+            try {
+                const t = Encoding.convert(bytes, { to: 'UNICODE', from: enc, type: 'string' });
+                if (t) candidates.push({ text: t, name: enc });
+            } catch (e) {}
+        }
+    }
+
+    // 方案兜底: 浏览器内置 TextDecoder
+    for (const enc of ['gb18030', 'big5', 'gbk']) {
+        try {
+            candidates.push({ text: new TextDecoder(enc, { fatal: false }).decode(bytes), name: 'TD-' + enc });
+        } catch (e) {}
+    }
+
+    if (candidates.length === 0) {
+        return new TextDecoder('utf-8').decode(bytes);
+    }
+
+    // 评分：中文占比高 - 替换字符 10倍 - 控制字符 5倍
+    function score(s) {
+        if (!s) return -1;
+        const len = s.length || 1;
+        const repl = (s.match(/\uFFFD/g) || []).length;
+        const ctrl = (s.match(/[\x00-\x08\x0B-\x1F\x7F]/g) || []).length;
+        const cn = (s.match(/[\u4E00-\u9FFF\u3400-\u4DBF]/g) || []).length;
+        return cn / len - (repl / len) * 10 - (ctrl / len) * 5;
+    }
+
+    candidates.sort((a, b) => score(b.text) - score(a.text));
+    const best = candidates[0];
+    console.log('TXT 编码选择:', best.name, '得分:', score(best.text).toFixed(3));
+    return best.text;
+}
+
+// 判断文本是否有明显编码问题（大量 � 或乱码特征）
+function hasEncodingIssues(text) {
+    if (!text) return true;
+    const replacementCount = (text.match(/�/g) || []).length;
+    // 大量 � 或包含 Windows 中文乱码常见模式
+    return replacementCount > text.length * 0.01;
+}
+
+// ====== Word docx 文本提取（含图片OCR） ======
+async function extractDocxText(file, label) {
+    const arrayBuffer = await file.arrayBuffer();
+    // 1. 用 mammoth 提取纯文本
+    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer.slice(0) });
+    let text = result.value || '';
+
+    // 2. 用 JSZip 提取 word/media/ 下的图片，逐张 OCR
+    try {
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const imageFiles = Object.keys(zip.files).filter(name =>
+            name.startsWith('word/media/') &&
+            /\.(png|jpe?g|gif|bmp|tiff?)$/i.test(name)
+        );
+
+        if (imageFiles.length > 0) {
+            updateLoadingText(`${label} 发现 ${imageFiles.length} 张图片，正在 OCR 识别...`);
+            const worker = await Tesseract.createWorker(['chi_sim', 'eng']);
+            await worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.AUTO });
+
+            for (let i = 0; i < imageFiles.length; i++) {
+                updateLoadingText(`${label} 图片 OCR ${i + 1}/${imageFiles.length}...`);
+                updateOcrProgress((i / imageFiles.length) * 100, `${label} 图片 ${i + 1}/${imageFiles.length}`);
+                const imgBlob = await zip.files[imageFiles[i]].async('blob');
+                const imgUrl = URL.createObjectURL(imgBlob);
+                const ocrResult = await worker.recognize(imgUrl);
+                if (ocrResult.data.text.trim()) {
+                    text += '\n[图片识别内容]\n' + ocrResult.data.text + '\n';
+                }
+                URL.revokeObjectURL(imgUrl);
+            }
+            await worker.terminate();
+            updateOcrProgress(100, `${label} 图片 OCR 完成`);
+        }
+    } catch (e) {
+        console.error('Docx image OCR failed:', e);
+    }
+    return text;
+}
+
+// ====== 统一文本提取入口 ======
+function getFileType(file) {
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.pdf')) return 'pdf';
+    if (name.endsWith('.txt')) return 'txt';
+    if (name.endsWith('.docx')) return 'docx';
+    if (name.endsWith('.doc')) return 'doc';
+    return 'unknown';
+}
+
+function isSupportedFile(file) {
+    return ['pdf', 'txt', 'docx', 'doc'].includes(getFileType(file));
+}
+
+async function extractTextFromFile(file, label) {
+    const type = getFileType(file);
+    if (type === 'pdf') {
+        return await extractPdfText(file);
+    } else if (type === 'txt') {
+        updateLoadingText(`正在读取${label}文本文件...`);
+        return await extractTxtText(file);
+    } else if (type === 'docx') {
+        updateLoadingText(`正在解析${label} Word文档...`);
+        return await extractDocxText(file, label);
+    } else if (type === 'doc') {
+        throw new Error('旧版 .doc 格式不支持，请另存为 .docx 后上传');
+    } else {
+        throw new Error('不支持的文件格式');
+    }
+}
+
+// ====== 罗马数字工具 ======
+function normalizeRoman(r) {
+    if (r === 'V') return '\u2164';
+    return r;
+}
+
+// ====== 分节检测 ======
+function detectSections(text) {
+    // 策略1: 试卷套卷名称
+    let boundaries = [];
+    let seen = new Set();
+    for (const marker of SET_MARKERS) {
+        const pos = text.indexOf(marker);
+        if (pos !== -1 && !seen.has(marker)) {
+            boundaries.push([marker, pos]);
+            seen.add(marker);
+        }
+    }
+    boundaries.sort((a, b) => a[1] - b[1]);
+    let deduped = [];
+    let lastPos = -1000;
+    for (const [name, pos] of boundaries) {
+        if (pos - lastPos > 100) { deduped.push([name, pos]); lastPos = pos; }
+    }
+    if (deduped.length >= 2) return splitSegments(text, deduped);
+
+    // 策略2: 第X天 主题词
+    const dayPattern = /\u7b2c(\d+)\u5929\s*([\u4e00-\u9fff]{2,8})?/g;
+    const dayMatches = [...text.matchAll(dayPattern)];
+    if (dayMatches.length >= 2) {
+        boundaries = [];
+        for (const m of dayMatches) {
+            const dayNum = m[1];
+            const topic = m[2] || '';
+            const name = `\u7b2c${dayNum}\u5929` + (topic ? ` ${topic}` : '');
+            boundaries.push([name, m.index]);
+        }
+        return splitSegments(text, boundaries);
+    }
+
+    // 策略3: 主题词直接出现
+    let topicPositions = [];
+    for (const kw of TOPIC_KEYWORDS) {
+        const pos = text.indexOf(kw);
+        if (pos !== -1) topicPositions.push([kw, pos]);
+    }
+    topicPositions.sort((a, b) => a[1] - b[1]);
+    deduped = [];
+    lastPos = -1000;
+    for (const [name, pos] of topicPositions) {
+        if (pos - lastPos > 200) { deduped.push([name, pos]); lastPos = pos; }
+    }
+    if (deduped.length >= 2) return splitSegments(text, deduped);
+
+    // 策略4: 时间:XXX分钟
+    const timeMatches = [...text.matchAll(/\u65f6\u95f4[:\uff1a]\s*\d+\s*\u5206\u949f/g)];
+    if (timeMatches.length >= 2) {
+        boundaries = timeMatches.map((m, i) => [`\u8bd5\u5377${i + 1}`, m.index]);
+        return splitSegments(text, boundaries);
+    }
+
+    // 策略5: 单节
+    return [['\u5168\u5377', text]];
+}
+
+function splitSegments(text, boundaries) {
+    boundaries.sort((a, b) => a[1] - b[1]);
+    let deduped = [];
+    let lastPos = -1000;
+    for (const [name, pos] of boundaries) {
+        if (pos - lastPos > 100) { deduped.push([name, pos]); lastPos = pos; }
+    }
+    if (deduped.length <= 1) return [['\u5168\u5377', text]];
+    let segments = [];
+    const [firstName, firstPos] = deduped[0];
+    if (firstPos > 0) {
+        const pre = text.substring(0, firstPos).trim();
+        if (pre && pre.length > 50) segments.push(['\u524d\u8a00', pre]);
+    }
+    for (let i = 0; i < deduped.length; i++) {
+        const [name, pos] = deduped[i];
+        const start = pos;
+        const end = i + 1 < deduped.length ? deduped[i + 1][1] : text.length;
+        segments.push([name, text.substring(start, end)]);
+    }
+    return segments;
+}
+
+// ====== 答案解析 ======
+function parseAnswers(text) {
+    const sections = detectSections(text);
+    const result = {};
+    for (const [secName, secText] of sections) {
+        result[secName] = parseAnswerSection(secText);
+    }
+    return result;
+}
+
+function parseAnswerSection(text) {
+    let entries = [];
+    const romanRe = new RegExp('(?:^|\\n|\\s)(' + ROMAN_PATTERN + '+)[\\.\\uFF0E\\u3001]\\s*', 'g');
+    const romanMatches = [...text.matchAll(romanRe)];
+
+    if (romanMatches.length === 0) {
+        return parseNumberedAnswers(text, '');
+    }
+
+    for (let i = 0; i < romanMatches.length; i++) {
+        const rm = romanMatches[i];
+        const roman = rm[1];
+        const bigStart = rm.index + rm[0].length;
+        const bigEnd = i + 1 < romanMatches.length ? romanMatches[i + 1].index : text.length;
+        const bigContent = text.substring(bigStart, bigEnd);
+
+        const subRe = /(?:^|\n|\s)(?:\(\s*(\d+)\s*\)|\uff08\s*(\d+)\s*\uff09|(\d+)\s*[\.\uFF0E\u3001\)])[\s]*/g;
+        const subMatches = [...bigContent.matchAll(subRe)];
+
+        if (subMatches.length === 0) {
+            const [ans, detail] = extractAnswerAndDetail(bigContent.trim());
+            if (ans) {
+                entries.push({ q_key: roman, roman, sub: 0, answer: ans, detail, raw: bigContent.trim().substring(0, 200) });
+            }
+            continue;
+        }
+
+        for (let j = 0; j < subMatches.length; j++) {
+            const sm = subMatches[j];
+            const subNum = parseInt(sm[1] || sm[2] || sm[3]);
+            if (subNum > 100 || subNum < 1) continue;
+            const subStart = sm.index + sm[0].length;
+            const subEnd = j + 1 < subMatches.length ? subMatches[j + 1].index : bigContent.length;
+            const subContent = bigContent.substring(subStart, subEnd).trim();
+            const [ans, detail] = extractAnswerAndDetail(subContent);
+            if (ans || detail) {
+                entries.push({ q_key: `${roman}.${subNum}`, roman, sub: subNum, answer: ans, detail, raw: subContent.substring(0, 200) });
+            }
+        }
+    }
+    return entries;
+}
+
+function parseNumberedAnswers(text, roman) {
+    roman = roman || '';
+    let entries = [];
+    const pattern = /(?:^|\n)\s*(?:\(\s*(\d+)\s*\)|\uff08\s*(\d+)\s*\uff09|(\d+)\s*[\.\uFF0E\u3001\)]|\u7b2c(\d+)\u9898)[\s]*/g;
+    const matches = [...text.matchAll(pattern)];
+    let seen = new Set();
+    let valid = [];
+    for (const m of matches) {
+        const num = parseInt(m[1] || m[2] || m[3] || m[4]);
+        if (num >= 1 && num <= 100 && !seen.has(num)) { valid.push(m); seen.add(num); }
+    }
+    for (let i = 0; i < valid.length; i++) {
+        const m = valid[i];
+        const num = parseInt(m[1] || m[2] || m[3] || m[4]);
+        const start = m.index + m[0].length;
+        const end = i + 1 < valid.length ? valid[i + 1].index : text.length;
+        const segment = text.substring(start, end).trim();
+        const [ans, detail] = extractAnswerAndDetail(segment);
+        if (ans || detail) {
+            entries.push({ q_key: roman ? `${roman}.${num}` : String(num), roman, sub: num, answer: ans, detail, raw: segment.substring(0, 200) });
+        }
+    }
+    return entries;
+}
+
+function extractAnswerAndDetail(content) {
+    content = content.trim();
+    if (!content) return ['', ''];
+
+    if (content.startsWith('\u3010\u8bed\u7bc7\u5bfc\u8bfb\u3011')) return ['', content.substring(0, 200)];
+
+    // 选择题
+    const choiceMatch = content.match(/^([A-E])[\s\u3000]+(?![.\uFF0E\u3001])/);
+    if (choiceMatch) {
+        let answer = choiceMatch[1];
+        let detail = content.substring(choiceMatch[0].length).trim().replace(/\s+/g, ' ').substring(0, 300);
+        return [answer, detail];
+    }
+
+    // 【答案】格式
+    const ansMatch = content.match(/\u3010\u7b54\u6848\u3011([\s\S]*?)(?=\u3010\u89e3\u6790\u3011|\u3010\u53c2\u8003\u8bd1\u6587\u3011|$)/);
+    if (ansMatch) {
+        let answerText = ansMatch[1].trim().replace(/\s+/g, ' ').substring(0, 200);
+        let detail = content.substring(ansMatch.index + ansMatch[0].length).trim().replace(/\s+/g, ' ').substring(0, 300);
+        return [answerText, detail];
+    }
+
+    // 【解析】格式
+    if (content.includes('\u3010\u89e3\u6790\u3011')) {
+        let parts = content.split('\u3010\u89e3\u6790\u3011');
+        let answerText = parts[0].trim().replace(/\s+/g, ' ').substring(0, 200);
+        let detail = parts.length > 1 ? parts.slice(1).join('\u3010\u89e3\u6790\u3011').trim() : '';
+        detail = detail.replace(/\s+/g, ' ').substring(0, 300);
+        return [answerText, detail];
+    }
+
+    // 句意/根据等
+    const explainMatch = content.match(/^([^\s\u3000\uff0c\u3002]+)[\s\u3000]+(\u53e5\u610f|\u6839\u636e|\u5206\u6790|\u89e3\u6790|\u7531|\u56e0\u4e3a|\u524d\u6587|\u540e\u6587|\u4e0a\u4e0b\u6587)/);
+    if (explainMatch) {
+        let answer = explainMatch[1].trim();
+        let detail = content.substring(explainMatch.index).trim().replace(/\s+/g, ' ').substring(0, 300);
+        return [answer, detail];
+    }
+
+    // 【写作指导】等
+    if (/^\u3010/.test(content)) {
+        return [content.replace(/\s+/g, ' ').substring(0, 200), ''];
+    }
+
+    // 填空/短语
+    const firstBreak = content.search(/[\s\u3000\uff0c\u3002\uff1b]/);
+    if (firstBreak !== -1 && firstBreak < 50) {
+        let answer = content.substring(0, firstBreak).trim();
+        let detail = content.substring(firstBreak).trim().replace(/\s+/g, ' ').substring(0, 300);
+        if (!detail || detail.length < 3) {
+            return [content.replace(/\s+/g, ' ').substring(0, 200), ''];
+        }
+        return [answer, detail];
+    }
+
+    // 兜底
+    return [content.replace(/\s+/g, ' ').substring(0, 200), ''];
+}
+
+// ====== 正文解析 ======
+function parseQuestions(text) {
+    const sections = detectSections(text);
+    const result = {};
+    for (const [secName, secText] of sections) {
+        result[secName] = parseQuestionSection(secText);
+    }
+    return result;
+}
+
+function parseQuestionSection(text) {
+    let entries = [];
+    const romanRe = new RegExp('(?:^|\\n|\\s)(' + ROMAN_PATTERN + '+)[\\.\\uFF0E\\u3001]\\s*', 'g');
+    const romanRe2 = /(?:^|\n)(V)[\.\uFF0E\u3001]\s*/g;
+    let allRoman = [...text.matchAll(romanRe), ...text.matchAll(romanRe2)];
+    allRoman.sort((a, b) => a.index - b.index);
+
+    let dedupedRoman = [];
+    let lastStart = -1000;
+    for (const m of allRoman) {
+        if (m.index - lastStart > 5) { dedupedRoman.push(m); lastStart = m.index; }
+    }
+
+    if (dedupedRoman.length === 0) return parseNumberedQuestions(text);
+
+    for (let i = 0; i < dedupedRoman.length; i++) {
+        const rm = dedupedRoman[i];
+        const roman = normalizeRoman(rm[1]);
+        const bigStart = rm.index + rm[0].length;
+        const bigEnd = i + 1 < dedupedRoman.length ? dedupedRoman[i + 1].index : text.length;
+        const bigContent = text.substring(bigStart, bigEnd);
+
+        const subRe = /(?:^|\n|\s)(?:\(\s*(\d+)\s*\)|\uff08\s*(\d+)\s*\uff09|(\d+)\s*[\.\uFF0E\u3001\)])[\s]*/g;
+        const subMatches = [...bigContent.matchAll(subRe)];
+
+        if (subMatches.length === 0) {
+            const stem = bigContent.trim().replace(/\s+/g, ' ').substring(0, 400);
+            if (stem) {
+                entries.push({ q_key: roman, roman, sub: 0, stem, options: {}, raw: bigContent.trim().substring(0, 200) });
+            }
+            continue;
+        }
+
+        for (let j = 0; j < subMatches.length; j++) {
+            const sm = subMatches[j];
+            const subNum = parseInt(sm[1] || sm[2] || sm[3]);
+            if (subNum > 100 || subNum < 1) continue;
+            const subStart = sm.index + sm[0].length;
+            const subEnd = j + 1 < subMatches.length ? subMatches[j + 1].index : bigContent.length;
+            const segment = bigContent.substring(subStart, subEnd).trim();
+
+            let options = {};
+            const optPattern = /([A-D])[\.\uFF0E\u3001\)]\s*([\s\S]*?)(?=\n[A-D][\.\uFF0E\u3001\)]|\n\d+[\.\uFF0E\u3001\)]|\n[\(\uff08]\d+|$)/g;
+            const optMatches = [...segment.matchAll(optPattern)];
+            let stem;
+            if (optMatches.length > 0) {
+                for (const om of optMatches) {
+                    options[om[1]] = om[2].replace(/\s+/g, ' ').trim().substring(0, 100);
+                }
+                const firstOpt = segment.search(/[A-D][\.\uFF0E\u3001\)]/);
+                stem = firstOpt !== -1 ? segment.substring(0, firstOpt).trim() : segment.substring(0, 200).trim();
+            } else {
+                stem = segment;
+            }
+            stem = stem.replace(/\s+/g, ' ').substring(0, 400);
+            if (stem.trim().length < 3) continue;
+            entries.push({ q_key: `${roman}.${subNum}`, roman, sub: subNum, stem, options, raw: segment.substring(0, 200) });
+        }
+    }
+    return entries;
+}
+
+function parseNumberedQuestions(text) {
+    let entries = [];
+    // 支持多种编号格式: 1. / 1．/ 1、 / (1) / （1） / 1) / 第1题
+    const pattern = /(?:^|\n)\s*(?:\(\s*(\d+)\s*\)|\uff08\s*(\d+)\s*\uff09|(\d+)\s*[\.\uFF0E\u3001\)]|\u7b2c(\d+)\u9898)[\s]*/g;
+    const matches = [...text.matchAll(pattern)];
+    let seen = new Set();
+    let valid = [];
+    for (const m of matches) {
+        const num = parseInt(m[1] || m[2] || m[3] || m[4]);
+        if (num >= 1 && num <= 100 && !seen.has(num)) { valid.push(m); seen.add(num); }
+    }
+    for (let i = 0; i < valid.length; i++) {
+        const m = valid[i];
+        const num = parseInt(m[1] || m[2] || m[3] || m[4]);
+        const start = m.index + m[0].length;
+        const end = i + 1 < valid.length ? valid[i + 1].index : text.length;
+        const segment = text.substring(start, end).trim();
+
+        let options = {};
+        const optPattern = /([A-D])[\.\uFF0E\u3001]\s*([\s\S]*?)(?=\n[A-D][\.\uFF0E\u3001]|\n\d+[\.\uFF0E\u3001]|$)/g;
+        const optMatches = [...segment.matchAll(optPattern)];
+        let stem;
+        if (optMatches.length > 0) {
+            for (const om of optMatches) {
+                options[om[1]] = om[2].replace(/\s+/g, ' ').trim().substring(0, 100);
+            }
+            const firstOpt = segment.search(/[A-D][\.\uFF0E\u3001\)]/);
+            stem = firstOpt !== -1 ? segment.substring(0, firstOpt).trim() : segment.substring(0, 200).trim();
+        } else {
+            stem = segment;
+        }
+        stem = stem.replace(/\s+/g, ' ').substring(0, 400);
+        if (stem.trim().length < 8) continue;
+        entries.push({ q_key: String(num), roman: '', sub: num, stem, options, raw: segment.substring(0, 200) });
+    }
+    return entries;
+}
+
+// ====== 节对齐 + 核对匹配 ======
+function sectionSimilarity(name1, name2) {
+    if (!name1 || !name2) return 0.0;
+    if (name1 === name2) return 1.0;
+    if (name1.includes(name2) || name2.includes(name1)) return 0.8;
+    const kws1 = new Set((name1.match(/[\u4e00-\u9fff]{2,}/g) || []));
+    const kws2 = new Set((name2.match(/[\u4e00-\u9fff]{2,}/g) || []));
+    if (kws1.size > 0 && kws2.size > 0) {
+        let overlap = 0;
+        for (const kw of kws1) if (kws2.has(kw)) overlap++;
+        const union = new Set([...kws1, ...kws2]);
+        return overlap / Math.max(union.size, 1);
+    }
+    return 0.0;
+}
+
+function matchSections(mainSections, answerSections) {
+    const mainNames = Object.keys(mainSections).filter(n => n !== '\u524d\u8a00');
+    const answerNames = Object.keys(answerSections).filter(n => n !== '\u524d\u8a00');
+    let matched = [];
+    let usedAnswer = new Set();
+
+    for (const mName of mainNames) {
+        let bestA = null, bestScore = 0;
+        for (const aName of answerNames) {
+            if (usedAnswer.has(aName)) continue;
+            const score = sectionSimilarity(mName, aName);
+            if (score > bestScore) { bestScore = score; bestA = aName; }
+        }
+        if (bestA && bestScore >= 0.3) { matched.push([mName, bestA]); usedAnswer.add(bestA); }
+        else { matched.push([mName, null]); }
+    }
+
+    const unmatchedAnswers = answerNames.filter(a => !usedAnswer.has(a));
+    let ai = 0;
+    for (let i = 0; i < matched.length; i++) {
+        if (matched[i][1] === null && ai < unmatchedAnswers.length) {
+            matched[i] = [matched[i][0], unmatchedAnswers[ai]]; ai++;
+        }
+    }
+    while (ai < unmatchedAnswers.length) { matched.push([null, unmatchedAnswers[ai]]); ai++; }
+    return matched;
+}
+
+function keywordSearch(answerText, mainText) {
+    if (!answerText || answerText.length < 2) return [false, ''];
+    const enWords = answerText.match(/[A-Za-z][A-Za-z\-]{3,}/g) || [];
+    const cnWords = answerText.match(/[\u4e00-\u9fff]{2,}/g) || [];
+    const keywords = enWords.slice(0, 5).concat(cnWords.slice(0, 3));
+    if (keywords.length === 0) return [false, ''];
+
+    let hits = 0, snippet = '';
+    const mainLower = mainText.toLowerCase();
+    for (const kw of keywords) {
+        const kwLower = kw.toLowerCase();
+        if (mainLower.includes(kwLower)) {
+            hits++;
+            const idx = mainLower.indexOf(kwLower);
+            if (!snippet) {
+                const start = Math.max(0, idx - 20);
+                snippet = mainText.substring(start, idx + kw.length + 40).trim();
+            }
+        }
+    }
+    return [hits >= 1, snippet];
+}
+
+function checkMatching(mainSections, answerSections, mainRawText) {
+    const sectionPairs = matchSections(mainSections, answerSections);
+    let results = [];
+
+    for (const [mName, aName] of sectionPairs) {
+        const mQuestions = mainSections[mName] || [];
+        const aAnswers = answerSections[aName] || [];
+
+        const mByKey = {};
+        for (const q of mQuestions) mByKey[q.q_key] = q;
+        const aByKey = {};
+        for (const a of aAnswers) aByKey[a.q_key] = a;
+
+        let allKeys = [];
+        let seen = new Set();
+        for (const q of mQuestions) { if (!seen.has(q.q_key)) { allKeys.push(q.q_key); seen.add(q.q_key); } }
+        for (const a of aAnswers) { if (!seen.has(a.q_key)) { allKeys.push(a.q_key); seen.add(a.q_key); } }
+
+        for (const qKey of allKeys) {
+            const q = mByKey[qKey];
+            const a = aByKey[qKey];
+            let entry = {
+                set: mName || aName || '\u672a\u77e5',
+                set_answer: aName || '\u2014',
+                num: qKey,
+                question_stem: '',
+                answer: '',
+                answer_detail: '',
+                match: true,
+                match_method: '',
+                mismatch_reason: ''
+            };
+            if (q) entry.question_stem = q.stem;
+            if (a) { entry.answer = a.answer; entry.answer_detail = a.detail; }
+
+            if (!q && a) {
+                const [found, snippet] = keywordSearch(a.answer, mainRawText);
+                if (found) {
+                    entry.match = true;
+                    entry.match_method = '\u5173\u952e\u8bcd\u53cd\u67e5';
+                    entry.question_stem = `\uff08\u53cd\u67e5\u547d\u4e2d\uff09${snippet.substring(0, 100)}`;
+                } else {
+                    entry.match = false;
+                    entry.mismatch_reason = '\u6b63\u6587\u4e2d\u65e0\u6b64\u9898\u53f7\uff0c\u5173\u952e\u8bcd\u4e5f\u672a\u547d\u4e2d';
+                }
+            } else if (q && !a) {
+                entry.match = false;
+                entry.mismatch_reason = '\u7b54\u6848\u4e2d\u65e0\u6b64\u9898';
+            } else if (q && a) {
+                if (q.options && Object.keys(q.options).length > 0 && 'ABCDE'.includes(a.answer)) {
+                    if (q.options[a.answer]) {
+                        entry.match = true;
+                        entry.match_method = '\u9898\u53f7+\u9009\u9879\u9a8c\u8bc1';
+                    } else {
+                        entry.match = false;
+                        entry.mismatch_reason = `\u7b54\u6848 ${a.answer} \u4e0d\u5728\u9009\u9879 ${Object.keys(q.options)} \u4e2d`;
+                    }
+                } else {
+                    entry.match = true;
+                    entry.match_method = '\u9898\u53f7\u5339\u914d';
+                }
+            }
+            results.push(entry);
+        }
+    }
+    return results;
+}
+
+// ====== 前端交互逻辑 ======
+let mainFile = null;
+let answerFile = null;
+let resultsData = [];
+let currentFilter = 'all';
+
+function onFileSelected(type, input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!isSupportedFile(file)) { alert('请上传 PDF、TXT 或 Word(docx) 文件'); return; }
+    if (type === 'main') {
+        mainFile = file;
+        document.getElementById('fileNameMain').textContent = '✓ ' + file.name;
+        document.getElementById('zoneMain').classList.add('has-file');
+    } else {
+        answerFile = file;
+        document.getElementById('fileNameAnswer').textContent = '✓ ' + file.name;
+        document.getElementById('zoneAnswer').classList.add('has-file');
+    }
+    updateButton();
+}
+
+function setupDragDrop(zoneId, type) {
+    const zone = document.getElementById(zoneId);
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', e => { e.preventDefault(); zone.classList.remove('dragover'); });
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (!file || !isSupportedFile(file)) { alert('请上传 PDF、TXT 或 Word(docx) 文件'); return; }
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        const inputId = type === 'main' ? 'inputMain' : 'inputAnswer';
+        document.getElementById(inputId).files = dt.files;
+        onFileSelected(type, { files: [file] });
+    });
+}
+setupDragDrop('zoneMain', 'main');
+setupDragDrop('zoneAnswer', 'answer');
+
+// 阻止整个页面的默认拖拽行为，防止拖到空白处时浏览器下载/打开文件
+document.addEventListener('dragover', e => {
+    // 只有拖到上传区域时才允许默认处理
+    if (!e.target.closest('.drop-zone')) {
+        e.preventDefault();
+    }
+});
+document.addEventListener('drop', e => {
+    if (!e.target.closest('.drop-zone')) {
+        e.preventDefault();
+    }
+});
+
+function updateButton() {
+    document.getElementById('btnCheck').disabled = !(mainFile && answerFile);
+}
+
+async function startCheck() {
+    document.getElementById('errorMsg').classList.remove('show');
+    document.getElementById('loadingOverlay').classList.add('show');
+    document.getElementById('debugSection').style.display = 'none';
+    document.getElementById('ocrProgress').style.display = 'none';
+    updateLoadingText('正在提取文本...');
+
+    // 检查关键库是否加载成功
+    const mainType = getFileType(mainFile);
+    const answerType = getFileType(answerFile);
+    if ((mainType === 'docx' || answerType === 'docx') && typeof mammoth === 'undefined') {
+        throw new Error('Word 解析库 mammoth.js 加载失败，请检查网络后刷新页面重试');
+    }
+    if ((mainType === 'docx' || answerType === 'docx') && typeof JSZip === 'undefined') {
+        throw new Error('ZIP 解析库 JSZip 加载失败，请检查网络后刷新页面重试');
+    }
+    if ((mainType === 'txt' || answerType === 'txt') && typeof Encoding === 'undefined') {
+        throw new Error('编码检测库 encoding.js 加载失败，请检查网络后刷新页面重试');
+    }
+
+    try {
+        // Step 1: 提取文本（根据文件类型自动选择提取方式）
+        let mainText = await extractTextFromFile(mainFile, '正文');
+        let answerText = await extractTextFromFile(answerFile, '答案');
+
+        // Step 2: 检测文本质量
+        const mainQuality = checkTextQuality(mainText);
+        const answerQuality = checkTextQuality(answerText);
+
+        // Step 3: 质量不佳时使用 OCR（仅 PDF 支持 OCR，docx 图片已在提取时 OCR）
+        if (!mainQuality.ok && mainType === 'pdf') {
+            updateLoadingText('正文文本质量不佳，正在使用 OCR 识别...');
+            try {
+                mainText = await ocrPdf(mainFile, '正文');
+            } catch (e) {
+                console.error('OCR main failed:', e);
+            }
+        }
+        if (!answerQuality.ok && answerType === 'pdf') {
+            updateLoadingText('答案文本质量不佳，正在使用 OCR 识别...');
+            try {
+                answerText = await ocrPdf(answerFile, '答案');
+            } catch (e) {
+                console.error('OCR answer failed:', e);
+            }
+        }
+
+        // 显示提取文本面板
+        const finalMainQuality = checkTextQuality(mainText);
+        const finalAnswerQuality = checkTextQuality(answerText);
+        showDebugPanel(mainText, answerText, finalMainQuality, finalAnswerQuality);
+
+        // Step 4: 解析和核对
+        updateLoadingText('正在解析题目并核对...');
+        const mainSections = parseQuestions(mainText);
+        const answerSections = parseAnswers(answerText);
+        const results = checkMatching(mainSections, answerSections, mainText);
+
+        const total = results.length;
+        const matched = results.filter(r => r.match).length;
+        const mismatched = total - matched;
+        const setNames = [...new Set(results.filter(r => r.set !== '\u524d\u8a00').map(r => r.set))].sort();
+
+        let sectionStats = {};
+        for (const r of results) {
+            const s = r.set;
+            if (s === '\u524d\u8a00') continue;
+            if (!sectionStats[s]) sectionStats[s] = { total: 0, matched: 0, mismatched: 0 };
+            sectionStats[s].total++;
+            if (r.match) sectionStats[s].matched++;
+            else sectionStats[s].mismatched++;
+        }
+
+        const data = {
+            success: true,
+            total, matched, mismatched,
+            set_count: setNames.length,
+            set_names: setNames,
+            section_stats: sectionStats,
+            main_sections: Object.keys(mainSections),
+            answer_sections: Object.keys(answerSections),
+            results
+        };
+
+        document.getElementById('loadingOverlay').classList.remove('show');
+        resultsData = data.results || [];
+        renderSummary(data);
+        renderTable();
+        renderMismatch();
+        document.getElementById('resultsSection').classList.add('show');
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+        document.getElementById('loadingOverlay').classList.remove('show');
+        document.getElementById('errorMsg').textContent = '\u5904\u7406\u51fa\u9519: ' + err.message;
+        document.getElementById('errorMsg').classList.add('show');
+    }
+}
+
+function renderSummary(data) {
+    const bar = document.getElementById('summaryBar');
+    const cards = [
+        { num: data.set_count || 1, label: '\u8282\u6570', cls: '' },
+        { num: data.total, label: '\u603b\u9898\u6570', cls: '' },
+        { num: data.matched, label: '\u5bf9\u5e94\u5339\u914d', cls: 'success' },
+        { num: data.mismatched, label: '\u4e0d\u5339\u914d', cls: 'danger' }
+    ];
+    bar.innerHTML = cards.map(c =>
+        `<div class="summary-card ${c.cls}"><div class="number">${c.num}</div><div class="label">${c.label}</div></div>`
+    ).join('');
+
+    const setInfoBar = document.getElementById('setInfoBar');
+    const setInfoText = document.getElementById('setInfoText');
+    if (data.set_names && data.set_names.length > 1) {
+        setInfoBar.style.display = 'block';
+        setInfoText.textContent = data.set_names.join('\u3001');
+        const select = document.getElementById('setFilter');
+        select.innerHTML = '<option value="all">\u5168\u90e8\u8282</option>';
+        data.set_names.forEach(name => { select.innerHTML += `<option value="${name}">${name}</option>`; });
+    } else {
+        setInfoBar.style.display = 'none';
+    }
+
+    const statsBar = document.getElementById('sectionStatsBar');
+    if (data.section_stats && Object.keys(data.section_stats).length > 1) {
+        let html = '<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+        for (const [name, st] of Object.entries(data.section_stats)) {
+            const rate = st.total > 0 ? Math.round(st.matched / st.total * 100) : 0;
+            const cls = st.mismatched === 0 ? 'success' : (rate >= 80 ? '' : 'danger');
+            html += `<div class="summary-card ${cls}" style="min-width:120px;padding:12px 10px;">
+                <div style="font-size:0.8rem;font-weight:600;color:var(--primary);margin-bottom:4px;">${name}</div>
+                <div style="font-size:1.2rem;font-weight:700;">${st.matched}/${st.total}</div>
+                <div style="font-size:0.72rem;color:var(--text-light);">\u5339\u914d\u7387 ${rate}%</div>
+            </div>`;
+        }
+        html += '</div>';
+        statsBar.innerHTML = html;
+        statsBar.style.display = 'block';
+    } else {
+        statsBar.style.display = 'none';
+    }
+}
+
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const setFilter = document.getElementById('setFilter').value;
+
+    resultsData.forEach(r => {
+        if (setFilter !== 'all' && r.set !== setFilter) return;
+        if (currentFilter === 'mismatch' && r.match) return;
+        const searchText = `${r.set} ${r.num} ${r.question_stem} ${r.answer} ${r.answer_detail}`.toLowerCase();
+        if (search && !searchText.includes(search)) return;
+
+        const matchBadge = r.match
+            ? '<span class="badge match">\u2713 \u5339\u914d</span>'
+            : '<span class="badge mismatch">\u2717 \u4e0d\u5339\u914d</span>';
+        let mismatchHtml = '';
+        if (r.mismatch_reason) mismatchHtml = `<div class="mismatch-reason">${r.mismatch_reason}</div>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight:600;color:var(--primary);white-space:nowrap;">${r.set || '\u2014'}</td>
+            <td class="q-num">${r.num}</td>
+            <td>${r.question_stem || '<span style="color:#ccc">\uff08\u65e0\uff09</span>'}</td>
+            <td><span class="answer-text">${r.answer || '\u2014'}</span>${r.answer_detail ? `<div class="answer-detail">${r.answer_detail}</div>` : ''}</td>
+            <td>${matchBadge}${mismatchHtml}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    if (tbody.children.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">\u65e0\u5339\u914d\u7ed3\u679c</td></tr>';
+    }
+}
+
+function filterTable() { renderTable(); }
+function filterByType(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+}
+
+function renderMismatch() {
+    const mismatches = resultsData.filter(r => !r.match);
+    const el = document.getElementById('mismatchContent');
+    if (mismatches.length === 0) {
+        el.innerHTML = '<div class="all-good">\u2705 \u5168\u90e8\u9898\u76ee\u6b63\u6587\u4e0e\u7b54\u6848\u4e00\u4e00\u5bf9\u5e94\u4e14\u5339\u914d\uff0c\u65e0\u4e0d\u5339\u914d\u9879\u3002</div>';
+    } else {
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">';
+        html += '<tr style="background:#fff3f0;"><th style="padding:8px;text-align:left;">\u8282</th><th style="padding:8px;text-align:left;">\u9898\u53f7</th><th style="padding:8px;text-align:left;">\u4e0d\u5339\u914d\u539f\u56e0</th></tr>';
+        mismatches.forEach(m => {
+            html += `<tr><td style="padding:8px;font-weight:600;color:var(--primary);">${m.set || '\u2014'}</td><td style="padding:8px;font-weight:700;">\u7b2c ${m.num} \u9898</td><td style="padding:8px;">${m.mismatch_reason}</td></tr>`;
+        });
+        html += '</table>';
+        el.innerHTML = html;
+    }
+}
+
+function exportCSV() {
+    if (!resultsData.length) return;
+    const headers = ['\u8282', '\u9898\u53f7', '\u6b63\u6587\u9898\u76ee\u6838\u5fc3\u5185\u5bb9', '\u7b54\u6848', '\u7b54\u6848\u8be6\u60c5', '\u5339\u914d\u72b6\u6001', '\u4e0d\u5339\u914d\u539f\u56e0'];
+    const rows = resultsData.map(r => [
+        r.set || '', r.num,
+        (r.question_stem || '').replace(/"/g, '""'),
+        r.answer || '',
+        (r.answer_detail || '').replace(/"/g, '""'),
+        r.match ? '\u5339\u914d' : '\u4e0d\u5339\u914d',
+        (r.mismatch_reason || '').replace(/"/g, '""')
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '\u6838\u5bf9\u62a5\u544a.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function resetAll() {
+    mainFile = null;
+    answerFile = null;
+    document.getElementById('inputMain').value = '';
+    document.getElementById('inputAnswer').value = '';
+    document.getElementById('fileNameMain').textContent = '';
+    document.getElementById('fileNameAnswer').textContent = '';
+    document.getElementById('zoneMain').classList.remove('has-file');
+    document.getElementById('zoneAnswer').classList.remove('has-file');
+    document.getElementById('resultsSection').classList.remove('show');
+    document.getElementById('errorMsg').classList.remove('show');
+    document.getElementById('debugSection').style.display = 'none';
+    document.getElementById('searchInput').value = '';
+    document.getElementById('setFilter').value = 'all';
+    document.getElementById('setFilter').innerHTML = '<option value="all">\u5168\u90e8\u8282</option>';
+    document.getElementById('setInfoBar').style.display = 'none';
+    currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.filter-btn').classList.add('active');
+    updateButton();
+}
+</script>
+</body>
+</html>
