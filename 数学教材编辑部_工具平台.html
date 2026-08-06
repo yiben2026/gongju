@@ -633,10 +633,26 @@
 
 <!-- === TAB 3: 文件核查 === -->
 <div id="tab-search" class="tab-content">
-  <div style="width:100%; height:calc(100vh - 140px); border-radius:12px; overflow:hidden; background:#fff; border:1px solid #ffc4d2; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
-    <iframe src="https://gongju-filecheck-production.up.railway.app/文件核查.html" style="width:100%; height:100%; border:none; display:block;" title="文件核查" allow="fullscreen"></iframe>
+  <div id="filecheck-container" style="width:100%; height:calc(100vh - 140px); border-radius:12px; overflow:hidden; background:#fff; border:1px solid #ffc4d2; box-shadow:0 4px 12px rgba(0,0,0,0.06); position:relative;">
+    <!-- 加载中 -->
+    <div id="filecheck-loading" style="display:flex; align-items:center; justify-content:center; height:100%; flex-direction:column; gap:16px;">
+      <div style="width:40px; height:40px; border:4px solid #ffe4ea; border-top-color:#ff6b8a; border-radius:50%; animation:fcspin 0.8s linear infinite;"></div>
+      <p style="color:#ff6b8a; font-size:15px;">正在检测服务状态...</p>
+    </div>
+    <!-- 在线（iframe）-->
+    <iframe id="filecheck-iframe" src="" style="width:100%; height:100%; border:none; display:none;" title="文件核查" allow="fullscreen"></iframe>
+    <!-- 离线（休眠）-->
+    <div id="filecheck-offline" style="display:none; align-items:center; justify-content:center; height:100%; flex-direction:column; gap:16px; text-align:center; padding:20px;">
+      <div style="font-size:48px;">💤</div>
+      <h3 style="color:#ff6b8a; margin:0; font-size:20px;">服务已休眠</h3>
+      <p style="color:#888; font-size:14px; max-width:420px; line-height:1.6;">文件核查服务处于休眠状态以节省额度。<br>点击下方按钮启动服务，启动后约需等待 30 秒。</p>
+      <button onclick="resumeFileCheck()" style="background:linear-gradient(135deg, #ff6b8a 0%, #ff5270 100%); color:#fff; border:none; border-radius:10px; padding:12px 32px; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(255,107,138,0.3); transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">▶️ 启动服务</button>
+      <p id="resume-status" style="color:#f39c12; font-size:13px; display:none;"></p>
+      <a href="https://railway.com/dashboard" target="_blank" style="color:#aaa; font-size:12px; margin-top:8px;">或手动前往 Railway 后台启动</a>
+    </div>
   </div>
 </div>
+<style>@keyframes fcspin { to { transform: rotate(360deg); } }</style>
 
 <!-- TOAST -->
 <div id="toast" class="toast" style="display:none;"></div>
@@ -1263,7 +1279,10 @@ function switchTab(tabId, el) {
       syncFromCloud().catch(()=>{});
     }
   }
-  // tab-search now embeds file-check tool via iframe; no extra init needed
+  // tab-search: 文件核查，检测服务状态
+  if (tabId === 'tab-search') {
+    initFileCheckTab();
+  }
 }
 
 // ====== TOAST ======
@@ -1571,6 +1590,63 @@ function renderResources() {
       </div>
     </div>
   `).join('');
+}
+
+// ====== 文件核查服务状态检测 ======
+const FILECHECK_URL = 'https://gongju-filecheck-production.up.railway.app';
+let fileCheckHealthTimer = null;
+
+function checkFileCheckHealth() {
+  return new Promise((resolve) => {
+    const controller = new AbortController();
+    const tid = setTimeout(() => { controller.abort(); resolve(false); }, 5000);
+    fetch(FILECHECK_URL + '/api/health', { signal: controller.signal })
+      .then(() => { clearTimeout(tid); resolve(true); })
+      .catch(() => { clearTimeout(tid); resolve(false); });
+  });
+}
+
+function showFileCheckState(state) {
+  const loading = document.getElementById('filecheck-loading');
+  const iframe = document.getElementById('filecheck-iframe');
+  const offline = document.getElementById('filecheck-offline');
+  loading.style.display = 'none';
+  iframe.style.display = 'none';
+  offline.style.display = 'none';
+  if (state === 'loading') loading.style.display = 'flex';
+  else if (state === 'online') { iframe.src = FILECHECK_URL + '/文件核查.html'; iframe.style.display = 'block'; }
+  else if (state === 'offline') offline.style.display = 'flex';
+}
+
+function initFileCheckTab() {
+  showFileCheckState('loading');
+  checkFileCheckHealth().then(alive => {
+    showFileCheckState(alive ? 'online' : 'offline');
+  });
+}
+
+function resumeFileCheck() {
+  const status = document.getElementById('resume-status');
+  status.style.display = 'block';
+  status.textContent = '正在打开 Railway 后台，请在页面中点击「Settings」→ 找到「Pause/Resume」按钮';
+  window.open('https://railway.com/dashboard', '_blank');
+  if (fileCheckHealthTimer) clearInterval(fileCheckHealthTimer);
+  let attempts = 0;
+  status.textContent = '等待服务启动中...（约需 30 秒）';
+  fileCheckHealthTimer = setInterval(async () => {
+    attempts++;
+    status.textContent = '等待服务启动中...（' + (attempts * 5) + '秒）';
+    const alive = await checkFileCheckHealth();
+    if (alive) {
+      clearInterval(fileCheckHealthTimer);
+      status.textContent = '✅ 服务已启动！';
+      setTimeout(() => showFileCheckState('online'), 500);
+    }
+    if (attempts > 24) {
+      clearInterval(fileCheckHealthTimer);
+      status.textContent = '启动超时，请刷新页面重试';
+    }
+  }, 5000);
 }
 
 // ====== INIT ======
