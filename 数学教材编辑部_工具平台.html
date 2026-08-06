@@ -645,7 +645,7 @@
     <div id="filecheck-offline" style="display:none; align-items:center; justify-content:center; height:100%; flex-direction:column; gap:16px; text-align:center; padding:20px;">
       <div style="font-size:48px;">💤</div>
       <h3 style="color:#ff6b8a; margin:0; font-size:20px;">服务已休眠</h3>
-      <p style="color:#888; font-size:14px; max-width:420px; line-height:1.6;">文件核查服务处于休眠状态以节省额度。<br>点击下方按钮启动服务，启动后约需等待 30 秒。</p>
+      <p style="color:#888; font-size:14px; max-width:420px; line-height:1.6;">文件核查服务处于休眠状态以节省额度。<br>点击下方按钮跳转 Railway 后台，点击 <b>Redeploy</b> 即可启动。<br>此页面会自动检测，启动后约 30 秒自动加载。</p>
       <button onclick="resumeFileCheck()" style="background:linear-gradient(135deg, #ff6b8a 0%, #ff5270 100%); color:#fff; border:none; border-radius:10px; padding:12px 32px; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(255,107,138,0.3); transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">▶️ 启动服务</button>
       <p id="resume-status" style="color:#f39c12; font-size:13px; display:none;"></p>
       <a href="https://railway.com/project/96e886c4-2e24-4a37-af5d-e585e9cd9428" target="_blank" style="color:#aaa; font-size:12px; margin-top:8px;">或手动前往 Railway 后台启动</a>
@@ -1628,58 +1628,28 @@ function initFileCheckTab() {
 function resumeFileCheck() {
   const status = document.getElementById('resume-status');
   status.style.display = 'block';
-  status.textContent = '正在通过 API 恢复服务...';
+  status.innerHTML = '正在打开 Railway 后台...<br>请在打开的页面中点击 <b>Settings</b> → <b>Redeploy</b> 按钮启动服务';
 
-  const RAILWAY_API = 'https://backboard.railway.com/graphql/v2';
-  const RAILWAY_TOKEN = '552dd0b1-e113-4922-a221-50f9176b9230';
-  const RAILWAY_SERVICE_ID = '66d76af2-24e9-468c-b7b8-af37b25328f4';
-  const RAILWAY_ENVIRONMENT_ID = '7aa2d5b9-8e02-41c4-8fa5-acb5058fef9d';
+  window.open('https://railway.com/project/96e886c4-2e24-4a37-af5d-e585e9cd9428', '_blank');
 
-  fetch(RAILWAY_API, {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + RAILWAY_TOKEN, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: `mutation { serviceInstanceRedeploy(serviceId: "${RAILWAY_SERVICE_ID}", environmentId: "${RAILWAY_ENVIRONMENT_ID}") }`
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.errors) {
-      console.error('API恢复失败:', data.errors);
-      status.textContent = 'API 恢复失败，正在打开 Railway 后台...';
-      window.open('https://railway.com/project/96e886c4-2e24-4a37-af5d-e585e9cd9428', '_blank');
+  if (fileCheckHealthTimer) clearInterval(fileCheckHealthTimer);
+  let attempts = 0;
+  status.innerHTML += '<br>等待服务启动中...（此页面会自动检测）';
+  fileCheckHealthTimer = setInterval(async () => {
+    attempts++;
+    const alive = await checkFileCheckHealth();
+    if (alive) {
+      clearInterval(fileCheckHealthTimer);
+      status.innerHTML = '✅ 服务已启动！';
+      setTimeout(() => showFileCheckState('online'), 500);
     } else {
-      status.textContent = '✅ 已发送恢复指令，等待服务启动...';
+      status.innerHTML = '请在 Railway 页面点击 <b>Redeploy</b> 启动服务<br>等待中...（' + (attempts * 5) + '秒）';
     }
-    startHealthPolling(status);
-  })
-  .catch(err => {
-    console.error('恢复请求失败:', err);
-    status.textContent = '无法自动恢复，请手动前往 Railway 启动';
-    window.open('https://railway.com/project/96e886c4-2e24-4a37-af5d-e585e9cd9428', '_blank');
-    startHealthPolling(status);
-  });
-
-  function startHealthPolling(status) {
-    if (fileCheckHealthTimer) clearInterval(fileCheckHealthTimer);
-    let attempts = 0;
-    status.textContent = (status.textContent || '') + ' 等待服务启动中...';
-    fileCheckHealthTimer = setInterval(async () => {
-      attempts++;
-      const alive = await checkFileCheckHealth();
-      if (alive) {
-        clearInterval(fileCheckHealthTimer);
-        status.textContent = '✅ 服务已启动！';
-        setTimeout(() => showFileCheckState('online'), 500);
-      } else {
-        status.textContent = '等待服务启动中...（' + (attempts * 5) + '秒）';
-      }
-      if (attempts > 24) {
-        clearInterval(fileCheckHealthTimer);
-        status.textContent = '启动超时，请刷新页面重试';
-      }
-    }, 5000);
-  }
+    if (attempts > 36) {
+      clearInterval(fileCheckHealthTimer);
+      status.innerHTML = '等待超时，服务启动后请刷新此页面';
+    }
+  }, 5000);
 }
 
 // ====== INIT ======
