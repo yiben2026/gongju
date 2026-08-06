@@ -438,7 +438,7 @@
 <nav class="top-nav">
   <span class="nav-item active" data-tab="tab-textbook" onclick="switchTab('tab-textbook', this)">教材版本</span>
   <span class="nav-item" data-tab="tab-resources" onclick="switchTab('tab-resources', this)">资料收录</span>
-  <span class="nav-item" data-tab="tab-search" onclick="switchTab('tab-search', this)">搜索引擎</span>
+  <span class="nav-item" data-tab="tab-search" onclick="switchTab('tab-search', this)">文件核查</span>
 </nav>
 
 <!-- === TAB 1: 教材版本 === -->
@@ -631,28 +631,11 @@
 </div>
 </div>
 
-<!-- === TAB 3: 搜索引擎 === -->
+<!-- === TAB 3: 文件核查 === -->
 <div id="tab-search" class="tab-content">
-<div class="container">
-  <div class="search-hero">
-    <h2>全域搜索</h2>
-    <p class="subtitle">在教材版本对比数据、用户添加内容和资料库中搜索</p>
+  <div style="width:100%; height:calc(100vh - 140px); border-radius:12px; overflow:hidden; background:#fff; border:1px solid #ffc4d2; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+    <iframe src="https://gongju-filecheck-production.up.railway.app/文件核查.html" style="width:100%; height:100%; border:none; display:block;" title="文件核查" allow="fullscreen"></iframe>
   </div>
-  <!-- Search -->
-  <div class="search-wrap" style="max-width:720px; margin:0 auto 8px;">
-    <div class="search-box">
-      <input type="text" id="global-search" placeholder="输入关键词搜索所有内容…" oninput="doGlobalSearch()">
-      <span class="search-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </span>
-    </div>
-  </div>
-  <div class="search-result-list" id="global-results"></div>
-  <div class="empty-state" id="global-empty" style="display:none;">
-    <div class="icon">🔍</div>
-    <p>输入关键词开始搜索</p>
-  </div>
-</div>
 </div>
 
 <!-- TOAST -->
@@ -1280,7 +1263,7 @@ function switchTab(tabId, el) {
       syncFromCloud().catch(()=>{});
     }
   }
-  if (tabId === 'tab-search') doGlobalSearch();
+  // tab-search now embeds file-check tool via iframe; no extra init needed
 }
 
 // ====== TOAST ======
@@ -1588,69 +1571,6 @@ function renderResources() {
       </div>
     </div>
   `).join('');
-}
-
-// ====== GLOBAL SEARCH ======
-function doGlobalSearch() {
-  const query = (document.getElementById('global-search').value || '').toLowerCase();
-  const results = document.getElementById('global-results');
-  const empty = document.getElementById('global-empty');
-
-  if (!query) {
-    results.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
-
-  empty.style.display = 'none';
-  const found = [];
-
-  // Search book data
-  allBookItems().forEach(item => {
-    if (item.name.toLowerCase().includes(query)) {
-      found.push({ source: '教材版本', title: item.name, desc: getItemDesc(item) });
-      return;
-    }
-    const cols = item.cols || {};
-    for (let i = 1; i <= 7; i++) {
-      const txt = (cols[i] || '').toLowerCase();
-      if (txt.includes(query)) {
-        found.push({ source: '教材版本', title: item.name + ' (' + verNames[i] + ')', desc: (cols[i] || '').substring(0, 200) });
-        return;
-      }
-    }
-  });
-
-  // Search resources
-  getStoredResources().forEach(r => {
-    if (r.name.toLowerCase().includes(query) || (r.link || '').toLowerCase().includes(query)) {
-      found.push({ source: '资料收录', title: r.name, desc: r.link || '', link: r.link });
-    }
-  });
-
-  if (found.length === 0) {
-    results.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>未找到相关结果</p></div>';
-    return;
-  }
-
-  results.innerHTML = found.map(f => `
-    <div class="search-result-item">
-      <div class="result-source">${f.source}</div>
-      <div class="result-title">${f.title}</div>
-      <div class="result-desc">${f.desc}</div>
-      ${f.link ? `<a href="${f.link}" target="_blank" style="font-size:13px; color:var(--blue);">${f.link}</a>` : ''}
-    </div>
-  `).join('');
-}
-
-function getItemDesc(item) {
-  const cols = item.cols || {};
-  const parts = [];
-  for (let i = 1; i <= 7; i++) {
-    const txt = (cols[i] || '').trim();
-    if (txt) parts.push(verNames[i] + ': ' + txt.substring(0, 80));
-  }
-  return parts.slice(0, 3).join(' | ');
 }
 
 // ====== INIT ======
