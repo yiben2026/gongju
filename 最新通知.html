@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>最新通知</title>
+<style>
+  :root {
+    --primary: #ff6b8a;
+    --primary-dark: #e85a78;
+    --primary-light: #fff0f3;
+    --bg: #fff5f8;
+    --border: #ffc4d2;
+    --border-light: #ffe4ea;
+    --text: #333;
+    --text-secondary: #666;
+    --card: #fff;
+    --shadow: 0 4px 20px rgba(255, 107, 138, 0.08);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  .nav-bar {
+    background: #fff;
+    border-bottom: 1px solid var(--border-light);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-bar a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-bar a:hover { color: var(--primary-dark); }
+  .nav-bar .nav-sep { color: #ccc; font-size: 14px; }
+  .nav-bar .nav-current { color: var(--text-secondary); font-size: 14px; }
+  .container {
+    max-width: 900px;
+    margin: 24px auto 100px;
+    padding: 0 20px;
+  }
+  .page-title {
+    text-align: center;
+    color: var(--primary);
+    font-size: 28px;
+    font-weight: 700;
+    margin: 16px 0 28px;
+    letter-spacing: 2px;
+  }
+  .announcements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .announcement-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .announcement-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 6px 24px rgba(255, 107, 138, 0.15);
+  }
+  .announcement-card.pinned {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, #fff 0%, #fff5f8 100%);
+  }
+  .announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .announcement-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    flex: 1;
+    word-break: break-word;
+  }
+  .pin-badge {
+    background: var(--primary);
+    color: #fff;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .announcement-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .announcement-content {
+    color: var(--text);
+    font-size: 15px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .announcement-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-light);
+  }
+  .announcement-actions button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .announcement-actions button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .announcement-actions button.delete:hover {
+    border-color: #e74c3c;
+    color: #e74c3c;
+  }
+  .fab {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b8a 0%, #ff5270 100%);
+    color: #fff;
+    border: none;
+    font-size: 32px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255, 107, 138, 0.35);
+    transition: all 0.2s ease;
+    z-index: 50;
+  }
+  .fab:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(255, 107, 138, 0.45);
+  }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 28px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    font-size: 22px;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+    background: #fff;
+    color: var(--text);
+  }
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .form-group textarea {
+    min-height: 140px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+  .form-group .hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+  }
+  .checkbox-group label {
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #ff6b8a 0%, #ff5270 100%);
+    color: #fff;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary {
+    background: #f5f5f5;
+    color: var(--text-secondary);
+  }
+  .btn-secondary:hover { background: #ebebeb; }
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-secondary);
+    font-size: 15px;
+  }
+  .empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+  }
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 300;
+  }
+  .toast.show { opacity: 1; }
+  @media (max-width: 600px) {
+    .container { padding: 0 14px; }
+    .page-title { font-size: 24px; }
+    .announcement-card { padding: 16px; }
+    .fab { bottom: 20px; right: 20px; width: 50px; height: 50px; font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <a href="index.html">← 智能校对工具</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-current">最新通知</span>
+</div>
+
+<div class="container">
+  <h1 class="page-title">📢 最新通知</h1>
+  <div id="announcementsList" class="announcements-list"></div>
+</div>
+
+<button class="fab" id="fabAdd" title="新增通知">+</button>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">新增通知</h2>
+    <form id="announcementForm">
+      <input type="hidden" id="editId">
+      <div class="form-group">
+        <label for="titleInput">标题 <span style="color:#e74c3c">*</span></label>
+        <input type="text" id="titleInput" placeholder="通知标题" maxlength="80" required>
+      </div>
+      <div class="form-group">
+        <label for="contentInput">内容 <span style="color:#e74c3c">*</span></label>
+        <textarea id="contentInput" placeholder="通知正文内容" required></textarea>
+        <div class="hint">支持换行，建议使用简洁的语言描述要点</div>
+      </div>
+      <div class="form-group">
+        <label for="authorInput">发布人</label>
+        <input type="text" id="authorInput" placeholder="例如：柚柚" maxlength="20">
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="pinnedInput">
+        <label for="pinnedInput">📌 置顶显示</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btnCancel">取消</button>
+        <button type="submit" class="btn btn-primary" id="btnSave">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  const STORAGE_KEY = 'gongju_announcements_v1';
+
+  // 数据
+  let announcements = loadAnnouncements();
+
+  function loadAnnouncements() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {
+      console.error('读取通知失败:', e);
+    }
+    // 首次访问时填充示例数据
+    const demo = [
+      {
+        id: genId(),
+        title: '欢迎使用最新通知',
+        content: '点击右下角「+」按钮即可新增通知。\n\n通知支持置顶、编辑、删除操作，所有数据保存在浏览器本地。',
+        author: '系统',
+        pinned: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      }
+    ];
+    saveAnnouncements(demo);
+    return demo;
+  }
+
+  function saveAnnouncements(list) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {
+      console.error('保存通知失败:', e);
+      showToast('保存失败：' + e.message);
+    }
+  }
+
+  function genId() {
+    return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function formatDate(ts) {
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function render() {
+    const list = document.getElementById('announcementsList');
+    if (!announcements.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">📭</div>
+          <div>暂无通知</div>
+          <div style="margin-top:8px;font-size:13px;">点击右下角「+」新增一条通知</div>
+        </div>`;
+      return;
+    }
+
+    // 排序：置顶在前，然后按更新时间倒序
+    const sorted = [...announcements].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return b.updatedAt - a.updatedAt;
+    });
+
+    list.innerHTML = sorted.map(a => {
+      const updated = a.updatedAt && a.updatedAt !== a.createdAt
+        ? `更新于 ${formatDate(a.updatedAt)}` : '';
+      return `
+        <div class="announcement-card ${a.pinned ? 'pinned' : ''}">
+          <div class="announcement-header">
+            <div class="announcement-title">${escapeHtml(a.title)}</div>
+            ${a.pinned ? '<span class="pin-badge">置顶</span>' : ''}
+          </div>
+          <div class="announcement-meta">
+            <span>📅 ${formatDate(a.createdAt)}</span>
+            ${a.author ? `<span>👤 ${escapeHtml(a.author)}</span>` : ''}
+            ${updated ? `<span>✏️ ${updated}</span>` : ''}
+          </div>
+          <div class="announcement-content">${escapeHtml(a.content)}</div>
+          <div class="announcement-actions">
+            <button data-action="edit" data-id="${a.id}">编辑</button>
+            <button data-action="pin" data-id="${a.id}">${a.pinned ? '取消置顶' : '置顶'}</button>
+            <button data-action="delete" data-id="${a.id}" class="delete">删除</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+  }
+
+  function openModal(editTarget) {
+    document.getElementById('modalTitle').textContent = editTarget ? '编辑通知' : '新增通知';
+    document.getElementById('editId').value = editTarget ? editTarget.id : '';
+    document.getElementById('titleInput').value = editTarget ? editTarget.title : '';
+    document.getElementById('contentInput').value = editTarget ? editTarget.content : '';
+    document.getElementById('authorInput').value = editTarget ? (editTarget.author || '') : '';
+    document.getElementById('pinnedInput').checked = editTarget ? !!editTarget.pinned : false;
+    document.getElementById('modalOverlay').classList.add('show');
+    setTimeout(() => document.getElementById('titleInput').focus(), 50);
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+    document.getElementById('announcementForm').reset();
+  }
+
+  function handleSave(e) {
+    e.preventDefault();
+    const title = document.getElementById('titleInput').value.trim();
+    const content = document.getElementById('contentInput').value.trim();
+    const author = document.getElementById('authorInput').value.trim();
+    const pinned = document.getElementById('pinnedInput').checked;
+    const editId = document.getElementById('editId').value;
+
+    if (!title) { showToast('请填写标题'); return; }
+    if (!content) { showToast('请填写内容'); return; }
+
+    if (editId) {
+      // 编辑
+      const idx = announcements.findIndex(a => a.id === editId);
+      if (idx >= 0) {
+        announcements[idx] = {
+          ...announcements[idx],
+          title, content, author, pinned,
+          updatedAt: Date.now()
+        };
+        showToast('已更新');
+      }
+    } else {
+      // 新增
+      announcements.unshift({
+        id: genId(),
+        title, content, author, pinned,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      showToast('已新增');
+    }
+
+    saveAnnouncements(announcements);
+    render();
+    closeModal();
+  }
+
+  function handleListClick(e) {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    const target = announcements.find(a => a.id === id);
+    if (!target) return;
+
+    if (action === 'edit') {
+      openModal(target);
+    } else if (action === 'pin') {
+      target.pinned = !target.pinned;
+      target.updatedAt = Date.now();
+      saveAnnouncements(announcements);
+      render();
+      showToast(target.pinned ? '已置顶' : '已取消置顶');
+    } else if (action === 'delete') {
+      if (!confirm(`确定删除「${target.title}」吗？`)) return;
+      announcements = announcements.filter(a => a.id !== id);
+      saveAnnouncements(announcements);
+      render();
+      showToast('已删除');
+    }
+  }
+
+  // 事件绑定
+  document.getElementById('fabAdd').addEventListener('click', () => openModal(null));
+  document.getElementById('btnCancel').addEventListener('click', closeModal);
+  document.getElementById('modalOverlay').addEventListener('click', e => {
+    if (e.target.id === 'modalOverlay') closeModal();
+  });
+  document.getElementById('announcementForm').addEventListener('submit', handleSave);
+  document.getElementById('announcementsList').addEventListener('click', handleListClick);
+
+  // 初始化
+  render();
+})();
+</script>
+
+</body>
+</html>
