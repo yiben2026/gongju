@@ -526,7 +526,7 @@
   <div id="edit-modal" style="display:none;"></div>
 
   <!-- 语文 -->
-  <div id="subject-content-语文" class="subject-content">
+  <div id="subject-content-语文" class="subject-content active">
     <div class="dashboard" id="tb-dashboard-语文"></div>
     <div class="search-wrap">
       <div class="search-box">
@@ -572,7 +572,7 @@
   </div>
 
   <!-- 数学 -->
-  <div id="subject-content-数学" class="subject-content active">
+  <div id="subject-content-数学" class="subject-content">
     <div class="dashboard" id="tb-dashboard-数学"></div>
     <div class="search-wrap">
       <div class="search-box">
@@ -1701,7 +1701,7 @@ function showToast(msg) {
 }
 
 // ====== SUBJECT SWITCH ======
-let currentSubject = '数学';
+let currentSubject = '语文';
 const subjects = ['语文','数学','英语','物理','化学','生物','政治','历史','地理'];
 
 function switchSubject(subject) {
@@ -2080,7 +2080,7 @@ function resumeFileCheck() {
 }
 
 // ====== INIT ======
-renderBookView('数学');
+renderBookView('语文');
 renderResources();
 fillCloudConfigInputs();
 updateCloudBadge();
