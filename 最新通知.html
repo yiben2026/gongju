@@ -64,18 +64,6 @@
     margin: 16px 0 28px;
     letter-spacing: 2px;
   }
-  .ver-badge {
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 8px;
-    padding: 3px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #fff;
-    background: linear-gradient(135deg, #ff6b8a 0%, #ff5270 100%);
-    border-radius: 20px;
-    letter-spacing: 0;
-  }
 
   /* ===== 云端配置面板 ===== */
   .cloud-config {
@@ -558,7 +546,7 @@
     </div>
   </div>
 
-  <h1 class="page-title">&#128226; 最新通知 <span class="ver-badge" id="verBadge">v3</span></h1>
+  <h1 class="page-title">&#128226; 最新通知</h1>
   <div id="announcementsList" class="announcements-list"></div>
 </div>
 
@@ -606,7 +594,6 @@
 (function() {
   'use strict';
 
-  var APP_VERSION = 'v4';
   var STORAGE_KEY = 'gongju_announcements_v1';
   var STORAGE_KEY_DELETED = 'gongju_announcements_deleted_v1';
   var CLOUD_CONFIG_KEY = 'cloud_config_announcements';
