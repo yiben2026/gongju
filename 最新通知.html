@@ -606,7 +606,7 @@
 (function() {
   'use strict';
 
-  var APP_VERSION = 'v3';
+  var APP_VERSION = 'v4';
   var STORAGE_KEY = 'gongju_announcements_v1';
   var STORAGE_KEY_DELETED = 'gongju_announcements_deleted_v1';
   var CLOUD_CONFIG_KEY = 'cloud_config_announcements';
@@ -623,6 +623,8 @@
   var announcements = loadLocal();
   // 已删除通知的 id 列表：用于跨浏览器同步删除操作
   var deletedIds = loadDeletedIds();
+  // 当前编辑弹窗中已插入的图片 dataUrl 列表
+  var currentImages = [];
 
   // ===== 本地存储 =====
   function loadLocal() {
@@ -687,47 +689,45 @@
       if (!files[i].type.startsWith('image/')) continue;
       (function(file) {
         compressImage(file, 1000, 0.7, function(dataUrl) {
-          var marker = '![](' + dataUrl + ')';
+          var placeholder = '[图片]';
           var pos = textarea.selectionStart;
           var before = textarea.value.substring(0, pos);
           var after = textarea.value.substring(textarea.selectionEnd);
-          var insertText = (before && !before.endsWith('\n')) ? '\n' + marker : marker;
+          var insertText = (before && !before.endsWith('\n')) ? '\n' + placeholder : placeholder;
           if (after && !after.startsWith('\n')) insertText += '\n';
           textarea.value = before + insertText + after;
           textarea.focus();
           textarea.selectionStart = textarea.selectionEnd = pos + insertText.length;
-          renderImagePreview(textarea.value);
+          currentImages.push(dataUrl);
+          renderImagePreview();
         });
       })(files[i]);
     }
     document.getElementById('imageInput').value = '';
   };
 
-  function renderImagePreview(content) {
+  function renderImagePreview() {
     var preview = document.getElementById('imagePreview');
-    var regex = /!\[\]\((data:image\/[^)]+)\)/g;
-    var matches = [];
-    var m;
-    while ((m = regex.exec(content)) !== null) {
-      matches.push(m[1]);
-    }
-    if (!matches.length) { preview.innerHTML = ''; return; }
-    preview.innerHTML = matches.map(function(src, i) {
+    if (!currentImages.length) { preview.innerHTML = ''; return; }
+    preview.innerHTML = currentImages.map(function(src, i) {
       return '<div class="img-thumb"><img src="' + src + '"><button type="button" class="remove-img" onclick="removeImage(' + i + ')">&times;</button></div>';
     }).join('');
   }
 
   window.removeImage = function(index) {
     var textarea = document.getElementById('contentInput');
-    var regex = /!\[\]\((data:image\/[^)]+)\)/g;
-    var count = 0;
-    var newContent = textarea.value.replace(regex, function(match) {
-      if (count === index) { count++; return ''; }
-      count++;
+    // 删除 textarea 中第 index 个 [图片] 占位符
+    var text = textarea.value;
+    var regex = /\[图片\]/g;
+    var n = 0;
+    var newText = text.replace(regex, function(match) {
+      if (n === index) { n++; return ''; }
+      n++;
       return match;
-    }).replace(/\n{3,}/g, '\n\n').trim();
-    textarea.value = newContent + '\n';
-    renderImagePreview(textarea.value);
+    });
+    textarea.value = newText.replace(/\n{3,}/g, '\n\n').trim();
+    currentImages.splice(index, 1);
+    renderImagePreview();
   };
 
   // ===== 渲染 =====
@@ -1109,11 +1109,21 @@
     document.getElementById('modalTitle').textContent = editTarget ? '编辑通知' : '新增通知';
     document.getElementById('editId').value = editTarget ? editTarget.id : '';
     document.getElementById('titleInput').value = editTarget ? editTarget.title : '';
-    document.getElementById('contentInput').value = editTarget ? editTarget.content : '';
     document.getElementById('authorInput').value = editTarget ? (editTarget.author || '') : '';
     document.getElementById('pinnedInput').checked = editTarget ? !!editTarget.pinned : false;
-    document.getElementById('imagePreview').innerHTML = '';
-    renderImagePreview(document.getElementById('contentInput').value);
+
+    // 图片处理：提取 content 中的 dataUrl 到 currentImages，textarea 中只显示 [图片] 占位符
+    currentImages = [];
+    var content = editTarget ? (editTarget.content || '') : '';
+    var imgRegex = /!\[([^\]]*)\]\((data:image\/[^)]+)\)/g;
+    var match;
+    while ((match = imgRegex.exec(content)) !== null) {
+      currentImages.push(match[2]);
+    }
+    content = content.replace(imgRegex, '[图片]');
+    document.getElementById('contentInput').value = content;
+
+    renderImagePreview();
     document.getElementById('modalOverlay').classList.add('show');
     setTimeout(function() { document.getElementById('titleInput').focus(); }, 50);
   }
@@ -1122,18 +1132,29 @@
     document.getElementById('modalOverlay').classList.remove('show');
     document.getElementById('announcementForm').reset();
     document.getElementById('imagePreview').innerHTML = '';
+    currentImages = [];
   }
 
   function handleSave(e) {
     e.preventDefault();
     var title = document.getElementById('titleInput').value.trim();
-    var content = document.getElementById('contentInput').value.trim();
+    var rawContent = document.getElementById('contentInput').value.trim();
     var author = document.getElementById('authorInput').value.trim();
     var pinned = document.getElementById('pinnedInput').checked;
     var editId = document.getElementById('editId').value;
 
     if (!title) { showToast('请填写标题'); return; }
-    if (!content) { showToast('请填写内容'); return; }
+    if (!rawContent) { showToast('请填写内容'); return; }
+
+    // 将 [图片] 占位符依次替换为真实的 markdown 图片
+    var content = rawContent;
+    var imgIndex = 0;
+    content = content.replace(/\[图片\]/g, function() {
+      if (imgIndex < currentImages.length) {
+        return '![](' + currentImages[imgIndex++] + ')';
+      }
+      return '[图片]';
+    });
 
     if (editId) {
       var idx = announcements.findIndex(function(a) { return a.id === editId; });
@@ -1226,7 +1247,6 @@
     }
     if (files.length) handleImageFiles(files);
   });
-  contentInput.addEventListener('input', function() { renderImagePreview(this.value); });
 
   // ===== 初始化 =====
   render();
