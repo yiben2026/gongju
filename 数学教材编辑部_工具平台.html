@@ -522,66 +522,96 @@
     <span class="subject-tab" data-subject="地理" onclick="switchSubject('地理')">地理</span>
   </div>
 
+  <!-- EDIT MODAL (shared) -->
+  <div id="edit-modal" style="display:none;"></div>
+
   <!-- 语文 -->
   <div id="subject-content-语文" class="subject-content">
-    <div class="subject-empty"><div class="emoji">&#128221;</div><p>语文教材版本对比内容待补充</p></div>
-  </div>
-
-  <!-- 数学 -->
-  <div id="subject-content-数学" class="subject-content active">
-    <!-- Dashboard -->
-    <div class="dashboard" id="tb-dashboard"></div>
-
-    <!-- Search -->
+    <div class="dashboard" id="tb-dashboard-语文"></div>
     <div class="search-wrap">
       <div class="search-box">
-        <input type="text" id="tb-search" placeholder="搜索知识点名称或任意版本内容…" oninput="renderBookView()">
+        <input type="text" id="tb-search-语文" placeholder="搜索语文知识点名称或任意版本内容…" oninput="renderBookView('语文')">
         <span class="search-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </span>
       </div>
     </div>
-
-    <!-- Buttons -->
     <div class="btn-group">
-      <button class="btn active" id="btn-view-all" onclick="setBookMode('all')">全部</button>
-      <button class="btn btn-add-new" id="btn-view-add" onclick="setBookMode('add')">+ 添加</button>
+      <button class="btn active" id="btn-view-all-语文" onclick="setBookMode('语文','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-语文" onclick="setBookMode('语文','add')">+ 添加</button>
     </div>
-
-    <!-- Category chips (only in 'all' mode) -->
-    <div class="chips" id="tb-chips"></div>
-
-    <!-- VIEW: ALL -->
-    <div id="book-view-all">
-      <div class="cards-grid" id="book-cards"></div>
+    <div class="chips" id="tb-chips-语文"></div>
+    <div id="book-view-all-语文">
+      <div class="cards-grid" id="book-cards-语文"></div>
     </div>
-
-    <!-- EDIT MODAL -->
-    <div id="edit-modal" style="display:none;"></div>
-
-    <!-- VIEW: ADD -->
-    <div id="book-view-add" style="display:none;">
+    <div id="book-view-add-语文" style="display:none;">
       <div class="add-form">
         <h3>添加新知识点</h3>
         <div class="form-row">
           <label>知识点名称</label>
-          <input type="text" id="add-name" placeholder="例：叫做/叫作">
+          <input type="text" id="add-name-语文" placeholder="例：叫做/叫作">
         </div>
         <div class="form-row">
           <label>各版本描述</label>
           <div class="ver-inputs">
-            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1" placeholder="描述…"></div>
-            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2" placeholder="描述…"></div>
-            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3" placeholder="描述…"></div>
-            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4" placeholder="描述…"></div>
-            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5" placeholder="描述…"></div>
-            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6" placeholder="描述…"></div>
-            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-语文" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-语文" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-语文" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-语文" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-语文" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-语文" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-语文" placeholder="描述…"></div>
           </div>
         </div>
         <div class="submit-row">
-          <button class="btn-submit" onclick="addBookItem()">确认添加</button>
-          <button class="btn-cancel" onclick="setBookMode('all')">取消</button>
+          <button class="btn-submit" onclick="addBookItem('语文')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('语文','all')">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数学 -->
+  <div id="subject-content-数学" class="subject-content active">
+    <div class="dashboard" id="tb-dashboard-数学"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search-数学" placeholder="搜索数学知识点名称或任意版本内容…" oninput="renderBookView('数学')">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all-数学" onclick="setBookMode('数学','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-数学" onclick="setBookMode('数学','add')">+ 添加</button>
+    </div>
+    <div class="chips" id="tb-chips-数学"></div>
+    <div id="book-view-all-数学">
+      <div class="cards-grid" id="book-cards-数学"></div>
+    </div>
+    <div id="book-view-add-数学" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name-数学" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-数学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-数学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-数学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-数学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-数学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-数学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-数学" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem('数学')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('数学','all')">取消</button>
         </div>
       </div>
     </div>
@@ -589,37 +619,324 @@
 
   <!-- 英语 -->
   <div id="subject-content-英语" class="subject-content">
-    <div class="subject-empty"><div class="emoji">&#127468;&#127463;</div><p>英语教材版本对比内容待补充</p></div>
+    <div class="dashboard" id="tb-dashboard-英语"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search-英语" placeholder="搜索英语知识点名称或任意版本内容…" oninput="renderBookView('英语')">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all-英语" onclick="setBookMode('英语','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-英语" onclick="setBookMode('英语','add')">+ 添加</button>
+    </div>
+    <div class="chips" id="tb-chips-英语"></div>
+    <div id="book-view-all-英语">
+      <div class="cards-grid" id="book-cards-英语"></div>
+    </div>
+    <div id="book-view-add-英语" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name-英语" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-英语" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-英语" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-英语" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-英语" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-英语" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-英语" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-英语" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem('英语')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('英语','all')">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 物理 -->
   <div id="subject-content-物理" class="subject-content">
-    <div class="subject-empty"><div class="emoji">&#128300;</div><p>物理教材版本对比内容待补充</p></div>
+    <div class="dashboard" id="tb-dashboard-物理"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search-物理" placeholder="搜索物理知识点名称或任意版本内容…" oninput="renderBookView('物理')">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all-物理" onclick="setBookMode('物理','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-物理" onclick="setBookMode('物理','add')">+ 添加</button>
+    </div>
+    <div class="chips" id="tb-chips-物理"></div>
+    <div id="book-view-all-物理">
+      <div class="cards-grid" id="book-cards-物理"></div>
+    </div>
+    <div id="book-view-add-物理" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name-物理" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-物理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-物理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-物理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-物理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-物理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-物理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-物理" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem('物理')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('物理','all')">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 化学 -->
   <div id="subject-content-化学" class="subject-content">
-    <div class="subject-empty"><div class="emoji">&#129514;</div><p>化学教材版本对比内容待补充</p></div>
+    <div class="dashboard" id="tb-dashboard-化学"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search-化学" placeholder="搜索化学知识点名称或任意版本内容…" oninput="renderBookView('化学')">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all-化学" onclick="setBookMode('化学','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-化学" onclick="setBookMode('化学','add')">+ 添加</button>
+    </div>
+    <div class="chips" id="tb-chips-化学"></div>
+    <div id="book-view-all-化学">
+      <div class="cards-grid" id="book-cards-化学"></div>
+    </div>
+    <div id="book-view-add-化学" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name-化学" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-化学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-化学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-化学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-化学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-化学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-化学" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-化学" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem('化学')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('化学','all')">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 生物 -->
   <div id="subject-content-生物" class="subject-content">
-    <div class="subject-empty"><div class="emoji">&#129516;</div><p>生物教材版本对比内容待补充</p></div>
+    <div class="dashboard" id="tb-dashboard-生物"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search-生物" placeholder="搜索生物知识点名称或任意版本内容…" oninput="renderBookView('生物')">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all-生物" onclick="setBookMode('生物','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-生物" onclick="setBookMode('生物','add')">+ 添加</button>
+    </div>
+    <div class="chips" id="tb-chips-生物"></div>
+    <div id="book-view-all-生物">
+      <div class="cards-grid" id="book-cards-生物"></div>
+    </div>
+    <div id="book-view-add-生物" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name-生物" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-生物" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-生物" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-生物" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-生物" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-生物" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-生物" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-生物" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem('生物')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('生物','all')">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 政治 -->
   <div id="subject-content-政治" class="subject-content">
-    <div class="subject-empty"><div class="emoji">&#127941;</div><p>政治教材版本对比内容待补充</p></div>
+    <div class="dashboard" id="tb-dashboard-政治"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search-政治" placeholder="搜索政治知识点名称或任意版本内容…" oninput="renderBookView('政治')">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all-政治" onclick="setBookMode('政治','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-政治" onclick="setBookMode('政治','add')">+ 添加</button>
+    </div>
+    <div class="chips" id="tb-chips-政治"></div>
+    <div id="book-view-all-政治">
+      <div class="cards-grid" id="book-cards-政治"></div>
+    </div>
+    <div id="book-view-add-政治" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name-政治" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-政治" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-政治" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-政治" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-政治" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-政治" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-政治" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-政治" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem('政治')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('政治','all')">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 历史 -->
   <div id="subject-content-历史" class="subject-content">
-    <div class="subject-empty"><div class="emoji">&#128220;</div><p>历史教材版本对比内容待补充</p></div>
+    <div class="dashboard" id="tb-dashboard-历史"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search-历史" placeholder="搜索历史知识点名称或任意版本内容…" oninput="renderBookView('历史')">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all-历史" onclick="setBookMode('历史','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-历史" onclick="setBookMode('历史','add')">+ 添加</button>
+    </div>
+    <div class="chips" id="tb-chips-历史"></div>
+    <div id="book-view-all-历史">
+      <div class="cards-grid" id="book-cards-历史"></div>
+    </div>
+    <div id="book-view-add-历史" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name-历史" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-历史" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-历史" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-历史" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-历史" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-历史" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-历史" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-历史" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem('历史')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('历史','all')">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 地理 -->
   <div id="subject-content-地理" class="subject-content">
-    <div class="subject-empty"><div class="emoji">&#127759;</div><p>地理教材版本对比内容待补充</p></div>
+    <div class="dashboard" id="tb-dashboard-地理"></div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search-地理" placeholder="搜索地理知识点名称或任意版本内容…" oninput="renderBookView('地理')">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all-地理" onclick="setBookMode('地理','all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add-地理" onclick="setBookMode('地理','add')">+ 添加</button>
+    </div>
+    <div class="chips" id="tb-chips-地理"></div>
+    <div id="book-view-all-地理">
+      <div class="cards-grid" id="book-cards-地理"></div>
+    </div>
+    <div id="book-view-add-地理" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name-地理" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1-地理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2-地理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3-地理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4-地理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5-地理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6-地理" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7-地理" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem('地理')">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('地理','all')">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -1255,7 +1572,7 @@ async function syncBookFromCloud() {
         const mergedOverride = { ...localOverride, ...cloudOverride };
         saveBookOverride(mergedOverride);
 
-        renderBookView();
+        renderBookView(currentSubject);
         showBookCloudStatus('✓ 拉取成功（新增 ' + cloudAdded.length + ' 条，覆盖 ' + Object.keys(cloudOverride).length + ' 条）', 'success');
     } catch (e) {
         showBookCloudStatus('✗ 拉取失败: ' + e.message, 'error');
@@ -1324,21 +1641,25 @@ function getBookOverride() {
 }
 function saveBookOverride(obj) { localStorage.setItem('book_override', JSON.stringify(obj)); }
 
-function allBookItems() {
+function allBookItems(subject) {
   const override = getBookOverride();
   let items = [...bookData.filter(i => i.name), ...getStoredBookItems()];
   const map = new Map();
   for (const item of items) {
+    const s = item.subject || '数学';
+    if (subject && s !== subject) continue;
     if (override[item.name] === null) continue;
     if (override[item.name]) {
-      map.set(item.name, override[item.name]);
+      map.set(item.name, Object.assign({}, override[item.name], { subject: override[item.name].subject || '数学' }));
     } else {
-      map.set(item.name, item);
+      map.set(item.name, Object.assign({}, item, { subject: s }));
     }
   }
   for (const [key, val] of Object.entries(override)) {
     if (val && !map.has(key)) {
-      map.set(key, val);
+      const s = val.subject || '数学';
+      if (subject && s !== subject) continue;
+      map.set(key, Object.assign({}, val, { subject: s }));
     }
   }
   return Array.from(map.values());
@@ -1351,7 +1672,7 @@ function switchTab(tabId, el) {
   document.getElementById(tabId).classList.add('active');
   el.classList.add('active');
   if (tabId === 'tab-textbook') {
-    renderBookView();
+    renderBookView(currentSubject);
     updateBookCloudBadge();
     if (isBookCloudConfigured()) {
       syncBookFromCloud().catch(()=>{});
@@ -1391,32 +1712,36 @@ function switchSubject(subject) {
   document.querySelectorAll('#tab-textbook .subject-content').forEach(c => {
     c.classList.toggle('active', c.id === 'subject-content-' + subject);
   });
-  if (subject === '数学') {
-    renderBookView();
-  }
+  renderBookView(subject);
 }
 
 // ====== BOOK MODE ======
-let bookMode = 'all';
-let bookCatFilter = '全部';
+let bookModeMap = {};
+let bookCatFilterMap = {};
 
-function setBookMode(mode) {
-  bookMode = mode;
-  document.getElementById('btn-view-all').classList.toggle('active', mode === 'all');
-  document.getElementById('btn-view-add').classList.toggle('active', mode === 'add');
-  document.getElementById('book-view-all').style.display = mode === 'all' ? 'block' : 'none';
-  document.getElementById('book-view-add').style.display = mode === 'add' ? 'block' : 'none';
-  document.getElementById('tb-chips').style.display = mode === 'all' ? 'flex' : 'none';
-  document.getElementById('tb-search').style.display = mode === 'all' ? 'block' : 'none';
-  document.querySelector('#tab-textbook .search-wrap').style.display = mode === 'all' ? 'flex' : 'none';
-  if (mode === 'all') renderBookView();
+function getBookMode(subject) { return bookModeMap[subject] || 'all'; }
+function getBookCatFilter(subject) { return bookCatFilterMap[subject] || '全部'; }
+function setBookCatFilter(subject, c) { bookCatFilterMap[subject] = c; }
+
+function setBookMode(subject, mode) {
+  bookModeMap[subject] = mode;
+  document.getElementById('btn-view-all-' + subject).classList.toggle('active', mode === 'all');
+  document.getElementById('btn-view-add-' + subject).classList.toggle('active', mode === 'add');
+  document.getElementById('book-view-all-' + subject).style.display = mode === 'all' ? 'block' : 'none';
+  document.getElementById('book-view-add-' + subject).style.display = mode === 'add' ? 'block' : 'none';
+  document.getElementById('tb-chips-' + subject).style.display = mode === 'all' ? 'flex' : 'none';
+  document.getElementById('tb-search-' + subject).style.display = mode === 'all' ? 'block' : 'none';
+  document.querySelector('#subject-content-' + subject + ' .search-wrap').style.display = mode === 'all' ? 'flex' : 'none';
+  if (mode === 'all') renderBookView(subject);
 }
 
-function renderBookView() {
-  const query = (document.getElementById('tb-search').value || '').toLowerCase();
-  const items = allBookItems();
+function renderBookView(subject) {
+  subject = subject || '数学';
+  const query = (document.getElementById('tb-search-' + subject).value || '').toLowerCase();
+  const items = allBookItems(subject);
+  const catFilter = getBookCatFilter(subject);
   const filtered = items.filter(item => {
-    if (bookCatFilter !== '全部' && categorize(item.name) !== bookCatFilter) return false;
+    if (catFilter !== '全部' && categorize(item.name) !== catFilter) return false;
     if (!query) return true;
     if (item.name.toLowerCase().includes(query)) return true;
     const cols = item.cols || {};
@@ -1433,7 +1758,7 @@ function renderBookView() {
     cats[c] = (cats[c] || 0) + 1;
   });
   const totalCats = Object.keys(cats).length;
-  document.getElementById('tb-dashboard').innerHTML = `
+  document.getElementById('tb-dashboard-' + subject).innerHTML = `
     <div class="dash-card"><div class="num">${filtered.length}</div><div class="label">对比项</div></div>
     <div class="dash-card"><div class="num">7</div><div class="label">教材版本</div></div>
     <div class="dash-card"><div class="num">${totalCats}</div><div class="label">分类板块</div></div>
@@ -1442,15 +1767,15 @@ function renderBookView() {
 
   // Chips
   const catList = ['全部', ...Object.keys(cats)];
-  document.getElementById('tb-chips').innerHTML = catList.map(c => {
+  document.getElementById('tb-chips-' + subject).innerHTML = catList.map(c => {
     const count = c === '全部' ? items.length : (cats[c] || 0);
-    return `<span class="chip ${bookCatFilter === c ? 'active' : ''}" onclick="bookCatFilter='${c}'; renderBookView();">
+    return `<span class="chip ${catFilter === c ? 'active' : ''}" onclick="setBookCatFilter('${subject}','${c}'); renderBookView('${subject}');">
       ${c}<span class="count">${count}</span>
     </span>`;
   }).join('');
 
   // Cards
-  document.getElementById('book-cards').innerHTML = filtered.map(item => renderCard(item)).join('');
+  document.getElementById('book-cards-' + subject).innerHTML = filtered.map(item => renderCard(item)).join('');
 }
 
 function renderCard(item) {
@@ -1458,6 +1783,7 @@ function renderCard(item) {
   const catColor = catColors[cat] || '#6c757d';
   const catBg = catBgColors[cat] || '#e9ecef';
   const cols = item.cols || {};
+  const subj = item.subject || '数学';
 
   let rows = '';
   for (let i = 1; i <= 7; i++) {
@@ -1478,33 +1804,34 @@ function renderCard(item) {
       </div>
       <div class="card-body">${rows}</div>
       <div class="card-actions">
-        <button class="btn-edit" onclick="openEditModal('${item.name}')">✏️ 修改</button>
-        <button class="btn-del" onclick="deleteBookItem('${item.name}')">🗑 删除</button>
+        <button class="btn-edit" onclick="openEditModal('${subj}','${item.name.replace(/'/g, "\\'")}')">✏️ 修改</button>
+        <button class="btn-del" onclick="deleteBookItem('${subj}','${item.name.replace(/'/g, "\\'")}')">🗑 删除</button>
       </div>
     </div>`;
 }
 
-function addBookItem() {
-  const name = document.getElementById('add-name').value.trim();
+function addBookItem(subject) {
+  subject = subject || '数学';
+  const name = document.getElementById('add-name-' + subject).value.trim();
   if (!name) { showToast('请输入知识点名称'); return; }
   const cols = {};
   for (let i = 1; i <= 7; i++) {
-    const v = document.getElementById('add-v' + i).value.trim();
+    const v = document.getElementById('add-v' + i + '-' + subject).value.trim();
     if (v) cols[i] = v;
   }
-  const existing = bookData.find(i => i.name === name);
+  const existing = allBookItems(subject).find(i => i.name === name);
   if (existing) {
     showToast('该知识点已存在，请使用修改功能'); return;
   }
   const items = getStoredBookItems();
-  items.push({ name, cols });
+  items.push({ name, cols, subject });
   saveStoredBookItems(items);
 
-  document.getElementById('add-name').value = '';
-  for (let i = 1; i <= 7; i++) document.getElementById('add-v' + i).value = '';
+  document.getElementById('add-name-' + subject).value = '';
+  for (let i = 1; i <= 7; i++) document.getElementById('add-v' + i + '-' + subject).value = '';
 
   showToast('添加成功！');
-  setBookMode('all');
+  setBookMode(subject, 'all');
 
   // 后台同步到云端
   pushBookToCloud().then(ok => {
@@ -1512,8 +1839,8 @@ function addBookItem() {
   });
 }
 
-function openEditModal(name) {
-  const item = allBookItems().find(i => i.name === name);
+function openEditModal(subject, name) {
+  const item = allBookItems(subject).find(i => i.name === name);
   if (!item) { showToast('未找到该知识点'); return; }
   const cols = item.cols || {};
   let verInputs = '';
@@ -1536,7 +1863,7 @@ function openEditModal(name) {
           <div class="ver-inputs">${verInputs}</div>
         </div>
         <div class="submit-row">
-          <button class="btn-submit" onclick="saveEdit('${item.name.replace(/'/g, "\'")}')">保存修改</button>
+          <button class="btn-submit" onclick="saveEdit('${subject}','${item.name.replace(/'/g, "\\'")}')">保存修改</button>
           <button class="btn-cancel" onclick="closeEditModal()">取消</button>
         </div>
       </div>
@@ -1548,7 +1875,7 @@ function closeEditModal() {
   document.getElementById('edit-modal').style.display = 'none';
 }
 
-function saveEdit(originalName) {
+function saveEdit(subject, originalName) {
   const newName = document.getElementById('edit-name').value.trim();
   if (!newName) { showToast('知识点名称不能为空'); return; }
   const cols = {};
@@ -1557,7 +1884,7 @@ function saveEdit(originalName) {
     if (v) cols[i] = v;
   }
   const override = getBookOverride();
-  const updated = { name: newName, cols };
+  const updated = { name: newName, cols, subject: subject };
   if (originalName !== newName) {
     override[originalName] = null;
     override[newName] = updated;
@@ -1567,7 +1894,7 @@ function saveEdit(originalName) {
   saveBookOverride(override);
   closeEditModal();
   showToast('修改已保存');
-  renderBookView();
+  renderBookView(subject);
 
   // 后台同步到云端
   pushBookToCloud().then(ok => {
@@ -1575,7 +1902,7 @@ function saveEdit(originalName) {
   });
 }
 
-function deleteBookItem(name) {
+function deleteBookItem(subject, name) {
   if (!confirm('确定要删除「' + name + '」吗？')) return;
 
   // 如果是用户自己添加的，直接从 added 中移除
@@ -1591,7 +1918,7 @@ function deleteBookItem(name) {
   override[name] = null;
   saveBookOverride(override);
   showToast('已删除');
-  renderBookView();
+  renderBookView(subject);
 
   // 后台同步到云端
   pushBookToCloud({ deletedName: name }).then(ok => {
@@ -1753,7 +2080,7 @@ function resumeFileCheck() {
 }
 
 // ====== INIT ======
-renderBookView();
+renderBookView('数学');
 renderResources();
 fillCloudConfigInputs();
 updateCloudBadge();
