@@ -870,13 +870,21 @@
     filePath = filePath || GITEE_FILE_PATH;
     var cfg = getCloudConfig();
     var url = GITEE_API + '/repos/' + cfg.giteeUser + '/' + cfg.giteeRepo + '/contents/' + filePath + '?access_token=' + encodeURIComponent(cfg.giteeToken);
-    var resp = await fetch(url, { cache: 'no-cache' });
-    if (resp.status === 404) return null;
-    if (!resp.ok) throw new Error('读取失败 (' + resp.status + ')');
-    var json = await resp.json();
-    if (Array.isArray(json) && json.length === 0) return null;
-    var content = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
-    return { data: JSON.parse(content), sha: json.sha };
+    try {
+      var resp = await fetch(url, { cache: 'no-cache' });
+      if (resp.status === 404) return null;
+      if (!resp.ok) throw new Error('读取失败 (' + resp.status + ')');
+      var json = await resp.json();
+      if (Array.isArray(json) && json.length === 0) return null;
+      var content = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
+      return { data: JSON.parse(content), sha: json.sha };
+    } catch (e) {
+      // fetch 在 CORS 或网络不通时直接抛 TypeError（消息通常为 Failed to fetch）
+      if (e && e.message && e.message.indexOf('Failed to fetch') !== -1) {
+        throw new Error('无法访问 Gitee。可能原因：① 仓库 ' + cfg.giteeRepo + ' 不存在，请点击「一键创建仓库」；② 当前网络或浏览器拦截了跨域请求。');
+      }
+      throw e;
+    }
   }
 
   async function giteeWriteFile(data, sha, filePath) {
@@ -961,7 +969,16 @@
     try {
       var result = await giteeReadFile();
       if (!result) {
-        showCloudStatus('云端还没有数据，添加通知后会自动上传', 'success');
+        // 云端暂无数据，如果本地有数据，自动上传到云端初始化
+        if (announcements.length > 0) {
+          showCloudStatus('云端还没有数据，正在将本地 ' + announcements.length + ' 条通知上传到云端...', '');
+          var ok = await pushToCloud();
+          if (ok) {
+            showCloudStatus('云端已初始化，共 ' + announcements.length + ' 条通知', 'success');
+          }
+        } else {
+          showCloudStatus('云端还没有数据，添加通知后会自动上传', 'success');
+        }
         return;
       }
       var cloudList = (result.data && Array.isArray(result.data.announcements)) ? result.data.announcements : [];
