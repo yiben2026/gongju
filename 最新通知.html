@@ -49,6 +49,16 @@
   .nav-bar a:hover { color: var(--primary-dark); }
   .nav-bar .nav-sep { color: #ccc; font-size: 14px; }
   .nav-bar .nav-current { color: var(--text-secondary); font-size: 14px; }
+  .nav-bar .cloud-badge {
+    margin-left: auto;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .nav-bar .cloud-badge.connected { background: #e8f5e9; color: #4caf50; }
+  .nav-bar .cloud-badge.syncing { background: #fff3e0; color: #ff9800; }
+  .nav-bar .cloud-badge.error { background: #ffebee; color: #f44336; }
   .container {
     max-width: 900px;
     margin: 24px auto 100px;
@@ -61,6 +71,31 @@
     font-weight: 700;
     margin: 16px 0 28px;
     letter-spacing: 2px;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .toolbar .sync-info {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .toolbar button.sync-btn {
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--primary);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .toolbar button.sync-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
   }
   .announcements-list {
     display: flex;
@@ -118,8 +153,14 @@
   .announcement-content {
     color: var(--text);
     font-size: 15px;
-    white-space: pre-wrap;
     word-break: break-word;
+    line-height: 1.8;
+  }
+  .announcement-content img {
+    max-width: 100%;
+    border-radius: 10px;
+    margin: 8px 0;
+    display: block;
   }
   .announcement-actions {
     display: flex;
@@ -182,7 +223,7 @@
     border-radius: var(--radius);
     padding: 28px;
     width: 100%;
-    max-width: 560px;
+    max-width: 600px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     max-height: 90vh;
     overflow-y: auto;
@@ -220,14 +261,74 @@
     border-color: var(--primary);
   }
   .form-group textarea {
-    min-height: 140px;
+    min-height: 160px;
     resize: vertical;
-    line-height: 1.6;
+    line-height: 1.7;
   }
   .form-group .hint {
     font-size: 12px;
     color: var(--text-secondary);
     margin-top: 4px;
+  }
+  .image-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .image-toolbar button {
+    background: var(--primary-light);
+    border: 1px solid var(--border);
+    color: var(--primary);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .image-toolbar button:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+  .image-toolbar .hint-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .image-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .image-preview .img-thumb {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+  }
+  .image-preview .img-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .image-preview .img-thumb .remove-img {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .checkbox-group {
     display: flex;
@@ -301,6 +402,7 @@
     z-index: 300;
   }
   .toast.show { opacity: 1; }
+  .drag-over { border-color: var(--primary) !important; background: var(--primary-light) !important; }
   @media (max-width: 600px) {
     .container { padding: 0 14px; }
     .page-title { font-size: 24px; }
@@ -312,13 +414,18 @@
 <body>
 
 <div class="nav-bar">
-  <a href="index.html">← 智能校对工具</a>
+  <a href="index.html">&larr; 智能校对工具</a>
   <span class="nav-sep">/</span>
   <span class="nav-current">最新通知</span>
+  <span class="cloud-badge connected" id="cloudBadge">已连接</span>
 </div>
 
 <div class="container">
-  <h1 class="page-title">📢 最新通知</h1>
+  <h1 class="page-title">&#128226; 最新通知</h1>
+  <div class="toolbar">
+    <button class="sync-btn" onclick="syncFromCloud()">&#13219;&#65039; 从云端拉取</button>
+    <span class="sync-info" id="syncInfo"></span>
+  </div>
   <div id="announcementsList" class="announcements-list"></div>
 </div>
 
@@ -335,8 +442,14 @@
       </div>
       <div class="form-group">
         <label for="contentInput">内容 <span style="color:#e74c3c">*</span></label>
-        <textarea id="contentInput" placeholder="通知正文内容" required></textarea>
-        <div class="hint">支持换行，建议使用简洁的语言描述要点</div>
+        <div class="image-toolbar">
+          <button type="button" onclick="document.getElementById('imageInput').click()">&#128247; 插入图片</button>
+          <span class="hint-text">也可直接粘贴或拖拽图片到输入框</span>
+          <input type="file" id="imageInput" accept="image/*" multiple style="display:none" onchange="handleImageFiles(this.files)">
+        </div>
+        <textarea id="contentInput" placeholder="通知正文内容，支持插入图片" required></textarea>
+        <div class="hint">支持换行，可直接粘贴/拖拽图片。图片会自动压缩。</div>
+        <div class="image-preview" id="imagePreview"></div>
       </div>
       <div class="form-group">
         <label for="authorInput">发布人</label>
@@ -344,7 +457,7 @@
       </div>
       <div class="checkbox-group">
         <input type="checkbox" id="pinnedInput">
-        <label for="pinnedInput">📌 置顶显示</label>
+        <label for="pinnedInput">&#128204; 置顶显示</label>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" id="btnCancel">取消</button>
@@ -360,109 +473,313 @@
 (function() {
   'use strict';
 
-  const STORAGE_KEY = 'gongju_announcements_v1';
+  var STORAGE_KEY = 'gongju_announcements_v1';
+  var GITEE_API = 'https://gitee.com/api/v5';
+  var GITEE_FILE_PATH = 'announcements.json';
 
-  // 数据
-  let announcements = loadAnnouncements();
+  // 内置云端配置
+  var DEFAULT_CLOUD_CONFIG = {
+    giteeUser: 'yibenai',
+    giteeRepo: 'zuixintongzhi',
+    giteeToken: '5c256881414ea0e9b4014143d52d61c9'
+  };
 
-  function loadAnnouncements() {
+  var announcements = loadLocal();
+  var pendingImages = []; // 待插入的图片 base64 列表
+
+  // ===== 本地存储 =====
+  function loadLocal() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return JSON.parse(raw);
-    } catch (e) {
-      console.error('读取通知失败:', e);
-    }
-    // 首次访问时填充示例数据
-    const demo = [
-      {
-        id: genId(),
-        title: '欢迎使用最新通知',
-        content: '点击右下角「+」按钮即可新增通知。\n\n通知支持置顶、编辑、删除操作，所有数据保存在浏览器本地。',
-        author: '系统',
-        pinned: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      }
-    ];
-    saveAnnouncements(demo);
+    } catch (e) { console.error('读取通知失败:', e); }
+    var demo = [{
+      id: genId(),
+      title: '欢迎使用最新通知',
+      content: '点击右下角「+」按钮即可新增通知。\n\n通知支持置顶、编辑、删除、插入图片，数据自动同步到云端，团队所有人共享。',
+      author: '系统',
+      pinned: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }];
+    saveLocal(demo);
     return demo;
   }
-
-  function saveAnnouncements(list) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    } catch (e) {
-      console.error('保存通知失败:', e);
-      showToast('保存失败：' + e.message);
-    }
+  function saveLocal(list) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+    catch (e) { showToast('保存失败：' + e.message); }
   }
-
   function genId() {
     return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
   }
-
   function formatDate(ts) {
-    const d = new Date(ts);
-    const pad = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    var d = new Date(ts);
+    var pad = function(n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  // ===== 图片处理 =====
+  function compressImage(file, maxW, quality, cb) {
+    maxW = maxW || 1000;
+    quality = quality || 0.7;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var w = img.width, h = img.height;
+        if (w > maxW) { h = h * maxW / w; w = maxW; }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        // PNG with transparency -> keep PNG; otherwise JPEG
+        var mime = (file.type === 'image/png') ? 'image/png' : 'image/jpeg';
+        var dataUrl = canvas.toDataURL(mime, quality);
+        cb(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  window.handleImageFiles = function(files) {
+    if (!files || !files.length) return;
+    var textarea = document.getElementById('contentInput');
+    for (var i = 0; i < files.length; i++) {
+      if (!files[i].type.startsWith('image/')) continue;
+      (function(file) {
+        compressImage(file, 1000, 0.7, function(dataUrl) {
+          var marker = '![](' + dataUrl + ')';
+          var pos = textarea.selectionStart;
+          var before = textarea.value.substring(0, pos);
+          var after = textarea.value.substring(textarea.selectionEnd);
+          var insertText = (before && !before.endsWith('\n')) ? '\n' + marker : marker;
+          if (after && !after.startsWith('\n')) insertText += '\n';
+          textarea.value = before + insertText + after;
+          textarea.focus();
+          textarea.selectionStart = textarea.selectionEnd = pos + insertText.length;
+          renderImagePreview(textarea.value);
+        });
+      })(files[i]);
+    }
+    document.getElementById('imageInput').value = '';
+  };
+
+  function renderImagePreview(content) {
+    var preview = document.getElementById('imagePreview');
+    var regex = /!\[\]\((data:image\/[^)]+)\)/g;
+    var matches = [];
+    var m;
+    while ((m = regex.exec(content)) !== null) {
+      matches.push(m[1]);
+    }
+    if (!matches.length) { preview.innerHTML = ''; return; }
+    preview.innerHTML = matches.map(function(src, i) {
+      return '<div class="img-thumb"><img src="' + src + '"><button type="button" class="remove-img" onclick="removeImage(' + i + ')">&times;</button></div>';
+    }).join('');
+  }
+
+  window.removeImage = function(index) {
+    var textarea = document.getElementById('contentInput');
+    var regex = /!\[\]\(data:image\/[^)]+\)/g;
+    var count = 0;
+    var newContent = textarea.value.replace(regex, function(match) {
+      if (count === index) { count++; return ''; }
+      count++;
+      return match;
+    }).replace(/\n{3,}/g, '\n\n').trim();
+    textarea.value = newContent + '\n';
+    renderImagePreview(textarea.value);
+  };
+
+  // ===== 渲染 =====
+  function renderContent(content) {
+    // 转义 HTML
+    var html = escapeHtml(content);
+    // 图片标记 ![alt](src) -> <img>
+    html = html.replace(/!\[([^\]]*)\]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, function(match, alt, src) {
+      return '<img src="' + src + '" alt="' + alt + '">';
+    });
+    // 换行
+    html = html.replace(/\n/g, '<br>');
+    return html;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
 
   function render() {
-    const list = document.getElementById('announcementsList');
+    var list = document.getElementById('announcementsList');
     if (!announcements.length) {
-      list.innerHTML = `
-        <div class="empty-state">
-          <div class="icon">📭</div>
-          <div>暂无通知</div>
-          <div style="margin-top:8px;font-size:13px;">点击右下角「+」新增一条通知</div>
-        </div>`;
+      list.innerHTML = '<div class="empty-state"><div class="icon">empty</div><div>暂无通知</div><div style="margin-top:8px;font-size:13px;">点击右下角「+」新增一条通知</div></div>';
       return;
     }
-
-    // 排序：置顶在前，然后按更新时间倒序
-    const sorted = [...announcements].sort((a, b) => {
+    var sorted = announcements.slice().sort(function(a, b) {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
       return b.updatedAt - a.updatedAt;
     });
-
-    list.innerHTML = sorted.map(a => {
-      const updated = a.updatedAt && a.updatedAt !== a.createdAt
-        ? `更新于 ${formatDate(a.updatedAt)}` : '';
-      return `
-        <div class="announcement-card ${a.pinned ? 'pinned' : ''}">
-          <div class="announcement-header">
-            <div class="announcement-title">${escapeHtml(a.title)}</div>
-            ${a.pinned ? '<span class="pin-badge">置顶</span>' : ''}
-          </div>
-          <div class="announcement-meta">
-            <span>📅 ${formatDate(a.createdAt)}</span>
-            ${a.author ? `<span>👤 ${escapeHtml(a.author)}</span>` : ''}
-            ${updated ? `<span>✏️ ${updated}</span>` : ''}
-          </div>
-          <div class="announcement-content">${escapeHtml(a.content)}</div>
-          <div class="announcement-actions">
-            <button data-action="edit" data-id="${a.id}">编辑</button>
-            <button data-action="pin" data-id="${a.id}">${a.pinned ? '取消置顶' : '置顶'}</button>
-            <button data-action="delete" data-id="${a.id}" class="delete">删除</button>
-          </div>
-        </div>`;
+    list.innerHTML = sorted.map(function(a) {
+      var updated = (a.updatedAt && a.updatedAt !== a.createdAt) ? '更新于 ' + formatDate(a.updatedAt) : '';
+      return '<div class="announcement-card ' + (a.pinned ? 'pinned' : '') + '">' +
+        '<div class="announcement-header">' +
+          '<div class="announcement-title">' + escapeHtml(a.title) + '</div>' +
+          (a.pinned ? '<span class="pin-badge">置顶</span>' : '') +
+        '</div>' +
+        '<div class="announcement-meta">' +
+          '<span>📅 ' + formatDate(a.createdAt) + '</span>' +
+          (a.author ? '<span>👤 ' + escapeHtml(a.author) + '</span>' : '') +
+          (updated ? '<span>✏️ ' + updated + '</span>' : '') +
+        '</div>' +
+        '<div class="announcement-content">' + renderContent(a.content) + '</div>' +
+        '<div class="announcement-actions">' +
+          '<button data-action="edit" data-id="' + a.id + '">编辑</button>' +
+          '<button data-action="pin" data-id="' + a.id + '">' + (a.pinned ? '取消置顶' : '置顶') + '</button>' +
+          '<button data-action="delete" data-id="' + a.id + '" class="delete">删除</button>' +
+        '</div>' +
+      '</div>';
     }).join('');
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-  }
-
   function showToast(msg) {
-    const toast = document.getElementById('toast');
+    var toast = document.getElementById('toast');
     toast.textContent = msg;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 1800);
+    setTimeout(function() { toast.classList.remove('show'); }, 1800);
   }
 
+  function setBadge(type, text) {
+    var badge = document.getElementById('cloudBadge');
+    badge.className = 'cloud-badge ' + type;
+    badge.textContent = text;
+  }
+
+  // ===== Gitee API =====
+  function giteeReadFile(cb) {
+    var cfg = DEFAULT_CLOUD_CONFIG;
+    var url = GITEE_API + '/repos/' + cfg.giteeUser + '/' + cfg.giteeRepo + '/contents/' + GITEE_FILE_PATH + '?access_token=' + encodeURIComponent(cfg.giteeToken);
+    fetch(url, { cache: 'no-cache' })
+      .then(function(resp) {
+        if (resp.status === 404) return null;
+        if (!resp.ok) throw new Error('读取失败 (' + resp.status + ')');
+        return resp.json();
+      })
+      .then(function(json) {
+        if (!json) { cb(null, null); return; }
+        if (Array.isArray(json) && json.length === 0) { cb(null, null); return; }
+        try {
+          var content = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
+          cb(JSON.parse(content), json.sha);
+        } catch(e) { cb(null, null); }
+      })
+      .catch(function(e) { cb(null, null, e); });
+  }
+
+  function giteeWriteFile(data, sha, cb) {
+    var cfg = DEFAULT_CLOUD_CONFIG;
+    var content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+    var body = { content: content, message: '更新通知 ' + new Date().toLocaleString() };
+    if (sha) body.sha = sha;
+    var url = GITEE_API + '/repos/' + cfg.giteeUser + '/' + cfg.giteeRepo + '/contents/' + GITEE_FILE_PATH + '?access_token=' + encodeURIComponent(cfg.giteeToken);
+    fetch(url, {
+      method: sha ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function(resp) {
+        if (!resp.ok) return resp.text().then(function(t) { throw new Error('写入失败 (' + resp.status + '): ' + t.substring(0, 150)); });
+        return resp.json();
+      })
+      .then(function(json) { cb(true, json); })
+      .catch(function(e) { cb(false, null, e); });
+  }
+
+  function giteeCreateRepo(cb) {
+    var cfg = DEFAULT_CLOUD_CONFIG;
+    var url = GITEE_API + '/user/repos?access_token=' + encodeURIComponent(cfg.giteeToken);
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: cfg.giteeRepo, private: false, auto_init: true })
+    })
+      .then(function(resp) {
+        if (resp.status === 422) { cb(true); return; }
+        if (!resp.ok) { resp.text().then(function(t) { cb(false, e); }); return; }
+        cb(true);
+      })
+      .catch(function(e) { cb(false, e); });
+  }
+
+  // ===== 云端同步 =====
+  window.syncFromCloud = function() {
+    setBadge('syncing', '同步中...');
+    var info = document.getElementById('syncInfo');
+    info.textContent = '正在从云端拉取...';
+    giteeReadFile(function(cloudData, sha, err) {
+      if (err && !cloudData) {
+        setBadge('error', '同步失败');
+        info.textContent = '拉取失败: ' + err.message;
+        setTimeout(function() { setBadge('connected', '已连接'); }, 3000);
+        return;
+      }
+      if (!cloudData) {
+        setBadge('connected', '已连接');
+        info.textContent = '云端暂无数据';
+        return;
+      }
+      var cloudList = (cloudData.announcements && Array.isArray(cloudData.announcements)) ? cloudData.announcements : [];
+      // 合并：以 id 为唯一标识，云端+本地合并，updatedAt 更新的优先
+      var map = {};
+      announcements.forEach(function(a) { map[a.id] = a; });
+      cloudList.forEach(function(a) {
+        if (!map[a.id]) {
+          map[a.id] = a;
+        } else {
+          // 冲突时取 updatedAt 更新的
+          if ((a.updatedAt || 0) > (map[a.id].updatedAt || 0)) {
+            map[a.id] = a;
+          }
+        }
+      });
+      var merged = Object.keys(map).map(function(k) { return map[k]; });
+      announcements = merged;
+      saveLocal(announcements);
+      render();
+      setBadge('connected', '已连接');
+      info.textContent = '已同步 ' + cloudList.length + ' 条云端通知 (' + (cloudData.updatedAt || '') + ')';
+    });
+  };
+
+  function pushToCloud() {
+    setBadge('syncing', '上传中...');
+    giteeReadFile(function(cloudData, sha) {
+      // 合并云端和本地
+      var cloudList = (cloudData && cloudData.announcements) ? cloudData.announcements : [];
+      var map = {};
+      cloudList.forEach(function(a) { map[a.id] = a; });
+      announcements.forEach(function(a) {
+        if (!map[a.id] || (a.updatedAt || 0) >= (map[a.id].updatedAt || 0)) {
+          map[a.id] = a;
+        }
+      });
+      var merged = Object.keys(map).map(function(k) { return map[k]; });
+      var payload = { announcements: merged, updatedAt: new Date().toISOString() };
+      giteeWriteFile(payload, sha, function(ok, json, err) {
+        if (ok) {
+          setBadge('connected', '已连接');
+        } else {
+          setBadge('error', '上传失败');
+          console.error('pushToCloud 失败:', err);
+          setTimeout(function() { setBadge('connected', '已连接'); }, 3000);
+        }
+      });
+    });
+  }
+
+  // ===== 弹窗操作 =====
   function openModal(editTarget) {
     document.getElementById('modalTitle').textContent = editTarget ? '编辑通知' : '新增通知';
     document.getElementById('editId').value = editTarget ? editTarget.id : '';
@@ -470,59 +787,58 @@
     document.getElementById('contentInput').value = editTarget ? editTarget.content : '';
     document.getElementById('authorInput').value = editTarget ? (editTarget.author || '') : '';
     document.getElementById('pinnedInput').checked = editTarget ? !!editTarget.pinned : false;
+    document.getElementById('imagePreview').innerHTML = '';
+    renderImagePreview(document.getElementById('contentInput').value);
     document.getElementById('modalOverlay').classList.add('show');
-    setTimeout(() => document.getElementById('titleInput').focus(), 50);
+    setTimeout(function() { document.getElementById('titleInput').focus(); }, 50);
   }
 
   function closeModal() {
     document.getElementById('modalOverlay').classList.remove('show');
     document.getElementById('announcementForm').reset();
+    document.getElementById('imagePreview').innerHTML = '';
   }
 
   function handleSave(e) {
     e.preventDefault();
-    const title = document.getElementById('titleInput').value.trim();
-    const content = document.getElementById('contentInput').value.trim();
-    const author = document.getElementById('authorInput').value.trim();
-    const pinned = document.getElementById('pinnedInput').checked;
-    const editId = document.getElementById('editId').value;
+    var title = document.getElementById('titleInput').value.trim();
+    var content = document.getElementById('contentInput').value.trim();
+    var author = document.getElementById('authorInput').value.trim();
+    var pinned = document.getElementById('pinnedInput').checked;
+    var editId = document.getElementById('editId').value;
 
     if (!title) { showToast('请填写标题'); return; }
     if (!content) { showToast('请填写内容'); return; }
 
     if (editId) {
-      // 编辑
-      const idx = announcements.findIndex(a => a.id === editId);
+      var idx = announcements.findIndex(function(a) { return a.id === editId; });
       if (idx >= 0) {
-        announcements[idx] = {
-          ...announcements[idx],
-          title, content, author, pinned,
-          updatedAt: Date.now()
-        };
+        announcements[idx].title = title;
+        announcements[idx].content = content;
+        announcements[idx].author = author;
+        announcements[idx].pinned = pinned;
+        announcements[idx].updatedAt = Date.now();
         showToast('已更新');
       }
     } else {
-      // 新增
       announcements.unshift({
-        id: genId(),
-        title, content, author, pinned,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
+        id: genId(), title: title, content: content, author: author, pinned: pinned,
+        createdAt: Date.now(), updatedAt: Date.now()
       });
       showToast('已新增');
     }
-
-    saveAnnouncements(announcements);
+    saveLocal(announcements);
     render();
     closeModal();
+    pushToCloud();
   }
 
   function handleListClick(e) {
-    const btn = e.target.closest('button[data-action]');
+    var btn = e.target.closest('button[data-action]');
     if (!btn) return;
-    const id = btn.dataset.id;
-    const action = btn.dataset.action;
-    const target = announcements.find(a => a.id === id);
+    var id = btn.dataset.id;
+    var action = btn.dataset.action;
+    var target = announcements.find(function(a) { return a.id === id; });
     if (!target) return;
 
     if (action === 'edit') {
@@ -530,29 +846,66 @@
     } else if (action === 'pin') {
       target.pinned = !target.pinned;
       target.updatedAt = Date.now();
-      saveAnnouncements(announcements);
+      saveLocal(announcements);
       render();
       showToast(target.pinned ? '已置顶' : '已取消置顶');
+      pushToCloud();
     } else if (action === 'delete') {
-      if (!confirm(`确定删除「${target.title}」吗？`)) return;
-      announcements = announcements.filter(a => a.id !== id);
-      saveAnnouncements(announcements);
+      if (!confirm('确定删除「' + target.title + '」吗？')) return;
+      announcements = announcements.filter(function(a) { return a.id !== id; });
+      saveLocal(announcements);
       render();
       showToast('已删除');
+      pushToCloud();
     }
   }
 
-  // 事件绑定
-  document.getElementById('fabAdd').addEventListener('click', () => openModal(null));
+  // ===== 事件绑定 =====
+  document.getElementById('fabAdd').addEventListener('click', function() { openModal(null); });
   document.getElementById('btnCancel').addEventListener('click', closeModal);
-  document.getElementById('modalOverlay').addEventListener('click', e => {
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
     if (e.target.id === 'modalOverlay') closeModal();
   });
   document.getElementById('announcementForm').addEventListener('submit', handleSave);
   document.getElementById('announcementsList').addEventListener('click', handleListClick);
 
-  // 初始化
+  // 内容输入框：粘贴图片 + 拖拽图片
+  var contentInput = document.getElementById('contentInput');
+  contentInput.addEventListener('paste', function(e) {
+    var items = e.clipboardData.items;
+    var hasImage = false;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        hasImage = true;
+        var file = items[i].getAsFile();
+        handleImageFiles([file]);
+      }
+    }
+    if (hasImage) e.preventDefault();
+  });
+  contentInput.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    contentInput.classList.add('drag-over');
+  });
+  contentInput.addEventListener('dragleave', function(e) {
+    contentInput.classList.remove('drag-over');
+  });
+  contentInput.addEventListener('drop', function(e) {
+    e.preventDefault();
+    contentInput.classList.remove('drag-over');
+    var files = [];
+    for (var i = 0; i < e.dataTransfer.files.length; i++) {
+      if (e.dataTransfer.files[i].type.startsWith('image/')) files.push(e.dataTransfer.files[i]);
+    }
+    if (files.length) handleImageFiles(files);
+  });
+  // 输入时更新图片预览
+  contentInput.addEventListener('input', function() { renderImagePreview(this.value); });
+
+  // ===== 初始化 =====
   render();
+  // 页面加载时自动从云端拉取
+  syncFromCloud();
 })();
 </script>
 
