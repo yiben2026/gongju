@@ -27,30 +27,21 @@
     color: var(--text);
     min-height: 100vh;
     line-height: 1.6;
+    padding-top: 48px;
   }
   .nav-bar {
-    background: #fff;
-    border-bottom: 1px solid var(--border-light);
-    padding: 12px 24px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 48px;
+    background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none;
+    box-shadow: 0 2px 8px rgba(255,107,138,0.3);
   }
-  .nav-bar a {
-    color: var(--primary);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  .nav-bar span {
+    font-size: 18px; font-weight: 700; color: #fff;
+    letter-spacing: 3px;
   }
-  .nav-bar a:hover { color: var(--primary-dark); }
-  .nav-bar .nav-sep { color: #ccc; font-size: 14px; }
-  .nav-bar .nav-current { color: var(--text-secondary); font-size: 14px; }
+  .nav-bar:hover { background: #ff5270; }
   .container {
     max-width: 900px;
     margin: 24px auto 100px;
@@ -497,11 +488,7 @@
 </head>
 <body>
 
-<div class="nav-bar">
-  <a href="index.html">&larr; 智能校对工具</a>
-  <span class="nav-sep">/</span>
-  <span class="nav-current">最新通知</span>
-</div>
+<a href="index.html" class="nav-bar"><span>智能校对工具</span></a>
 
 <div class="container">
 
