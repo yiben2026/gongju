@@ -64,6 +64,18 @@
     margin: 16px 0 28px;
     letter-spacing: 2px;
   }
+  .ver-badge {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #ff6b8a 0%, #ff5270 100%);
+    border-radius: 20px;
+    letter-spacing: 0;
+  }
 
   /* ===== 云端配置面板 ===== */
   .cloud-config {
@@ -535,6 +547,7 @@
         <button class="cfg-btn primary" onclick="saveCloudConfig()">&#128190; 保存配置</button>
         <button class="cfg-btn ghost" onclick="createNewBin()">&#128295; 一键创建仓库</button>
         <button class="cfg-btn ghost" onclick="syncFromCloud()">&#11015; 立即从云端拉取</button>
+        <button class="cfg-btn ghost" onclick="resetLocalData()">&#128260; 重置本地数据</button>
         <button class="cfg-btn ghost" onclick="restoreDefaultCloudConfig()">&#8617; 恢复默认配置</button>
         <button class="cfg-btn danger" onclick="clearCloudConfig()">&#128465; 清空配置</button>
       </div>
@@ -545,7 +558,7 @@
     </div>
   </div>
 
-  <h1 class="page-title">&#128226; 最新通知</h1>
+  <h1 class="page-title">&#128226; 最新通知 <span class="ver-badge" id="verBadge">v3</span></h1>
   <div id="announcementsList" class="announcements-list"></div>
 </div>
 
@@ -593,6 +606,7 @@
 (function() {
   'use strict';
 
+  var APP_VERSION = 'v3';
   var STORAGE_KEY = 'gongju_announcements_v1';
   var STORAGE_KEY_DELETED = 'gongju_announcements_deleted_v1';
   var CLOUD_CONFIG_KEY = 'cloud_config_announcements';
@@ -616,17 +630,8 @@
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return JSON.parse(raw);
     } catch (e) { console.error('读取通知失败:', e); }
-    var demo = [{
-      id: genId(),
-      title: '欢迎使用最新通知',
-      content: '点击右下角「+」按钮即可新增通知。\n\n通知支持置顶、编辑、删除、插入图片，数据自动同步到云端，团队所有人共享。',
-      author: '系统',
-      pinned: true,
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    }];
-    saveLocal(demo);
-    return demo;
+    // 不再自动生成示例数据，避免新浏览器产生脏数据污染云端
+    return [];
   }
   function saveLocal(list) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
@@ -943,6 +948,21 @@
     return { exists: false };
   }
 
+  window.resetLocalData = function() {
+    if (!confirm('确定要清除本机保存的所有通知数据吗？\n清除后会立即从云端重新拉取。')) return;
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY_DELETED);
+      localStorage.removeItem(STORAGE_KEY + '_v2');
+      localStorage.removeItem(STORAGE_KEY_DELETED + '_v2');
+    } catch (e) {}
+    announcements = [];
+    deletedIds = [];
+    render();
+    showToast('本地数据已重置');
+    syncFromCloud();
+  };
+
   window.createNewBin = async function() {
     var user = document.getElementById('cfg-gitee-user').value.trim();
     var repo = document.getElementById('cfg-gitee-repo').value.trim() || 'zuixintongzhi';
@@ -975,7 +995,7 @@
     }
   };
 
-  // ===== 云端同步 =====
+  // ===== 云端同步（云端为权威） =====
   window.syncFromCloud = async function() {
     var cfg = getCloudConfig();
     if (!cfg.giteeUser || !cfg.giteeToken) { showCloudStatus('请先配置 Gitee', 'error'); return; }
@@ -995,30 +1015,35 @@
         }
         return;
       }
-      var cloudList = (result.data && Array.isArray(result.data.announcements)) ? result.data.announcements : [];
-      var cloudDeleted = (result.data && Array.isArray(result.data.deletedIds)) ? result.data.deletedIds : [];
-      // 合并已删除 id（本地 + 云端），先过滤再合并通知
+      var cloudData = result.data;
+      var cloudList = (cloudData && Array.isArray(cloudData.announcements)) ? cloudData.announcements : [];
+      var cloudDeleted = (cloudData && Array.isArray(cloudData.deletedIds)) ? cloudData.deletedIds : [];
+
+      // 保护：本地有云端没有的 id（可能是刚新增还没推送的数据），先上传再拉取
+      var localExtra = announcements.filter(function(a) { return cloudList.indexOf(a.id) === -1 && cloudDeleted.indexOf(a.id) === -1; });
+      if (localExtra.length > 0) {
+        showCloudStatus('检测到本地有 ' + localExtra.length + ' 条尚未同步的通知，先上传...', '');
+        var pushed = await pushToCloud();
+        if (pushed) {
+          result = await giteeReadFile();
+          cloudList = (result && result.data && Array.isArray(result.data.announcements)) ? result.data.announcements : [];
+          cloudDeleted = (result && result.data && Array.isArray(result.data.deletedIds)) ? result.data.deletedIds : [];
+        }
+      }
+
+      // 合并已删除 id（本地 + 云端），已删除的通知不再出现
       var mergedDeleted = {};
       deletedIds.forEach(function(id) { mergedDeleted[id] = true; });
       cloudDeleted.forEach(function(id) { mergedDeleted[id] = true; });
       deletedIds = Object.keys(mergedDeleted);
       saveDeletedIds();
-      // 按 id 合并，updatedAt 更新的优先，已删除的不再出现
-      var map = {};
-      announcements.forEach(function(a) { if (!mergedDeleted[a.id]) map[a.id] = a; });
-      cloudList.forEach(function(a) {
-        if (mergedDeleted[a.id]) return;
-        if (!map[a.id]) {
-          map[a.id] = a;
-        } else if ((a.updatedAt || 0) > (map[a.id].updatedAt || 0)) {
-          map[a.id] = a;
-        }
-      });
-      var merged = Object.keys(map).map(function(k) { return map[k]; });
-      announcements = merged;
+
+      // 云端为权威：直接用云端列表替换本地（过滤掉已删除的）
+      var list = cloudList.filter(function(a) { return !mergedDeleted[a.id]; });
+      announcements = list;
       saveLocal(announcements);
       render();
-      showCloudStatus('拉取成功，共 ' + cloudList.length + ' 条通知 (更新于 ' + (result.data.updatedAt || '未知') + ')', 'success');
+      showCloudStatus('已同步云端 ' + list.length + ' 条通知 (更新于 ' + (cloudData.updatedAt || '未知') + ')', 'success');
     } catch (e) {
       showCloudStatus('拉取失败: ' + e.message, 'error');
     }
