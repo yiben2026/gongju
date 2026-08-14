@@ -117,6 +117,34 @@
   }
   .btn-add-new:hover { opacity: 0.9; }
 
+  /* === SUBJECT TABS === */
+  .subject-tabs {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding: 12px 16px; background: #fff;
+    border: 1px solid var(--gray-200); border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+  .subject-tab {
+    padding: 8px 18px; border-radius: 20px;
+    font-size: 14px; font-weight: 600; color: var(--gray-600);
+    background: var(--gray-50); border: 1px solid var(--gray-200);
+    cursor: pointer; transition: all 0.2s; user-select: none;
+  }
+  .subject-tab:hover { color: var(--pink); border-color: var(--pink-border); background: var(--pink-light); }
+  .subject-tab.active {
+    background: var(--pink); color: #fff; border-color: var(--pink);
+    box-shadow: 0 2px 8px rgba(255,107,138,0.25);
+  }
+  .subject-content { display: none; }
+  .subject-content.active { display: block; }
+  .subject-empty {
+    padding: 80px 20px; text-align: center; color: var(--gray-500);
+    background: #fff; border: 1px dashed var(--gray-300); border-radius: var(--radius);
+  }
+  .subject-empty .emoji { font-size: 48px; margin-bottom: 12px; }
+  .subject-empty p { font-size: 15px; }
+
   /* === CHIPS === */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
   .chip {
@@ -481,62 +509,119 @@
     </div>
   </div>
 
-  <!-- Dashboard -->
-  <div class="dashboard" id="tb-dashboard"></div>
-
-  <!-- Search -->
-  <div class="search-wrap">
-    <div class="search-box">
-      <input type="text" id="tb-search" placeholder="搜索知识点名称或任意版本内容…" oninput="renderBookView()">
-      <span class="search-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </span>
-    </div>
+  <!-- Subject tabs -->
+  <div class="subject-tabs" id="subject-tabs">
+    <span class="subject-tab active" data-subject="语文" onclick="switchSubject('语文')">语文</span>
+    <span class="subject-tab" data-subject="数学" onclick="switchSubject('数学')">数学</span>
+    <span class="subject-tab" data-subject="英语" onclick="switchSubject('英语')">英语</span>
+    <span class="subject-tab" data-subject="物理" onclick="switchSubject('物理')">物理</span>
+    <span class="subject-tab" data-subject="化学" onclick="switchSubject('化学')">化学</span>
+    <span class="subject-tab" data-subject="生物" onclick="switchSubject('生物')">生物</span>
+    <span class="subject-tab" data-subject="政治" onclick="switchSubject('政治')">政治</span>
+    <span class="subject-tab" data-subject="历史" onclick="switchSubject('历史')">历史</span>
+    <span class="subject-tab" data-subject="地理" onclick="switchSubject('地理')">地理</span>
   </div>
 
-  <!-- Buttons -->
-  <div class="btn-group">
-    <button class="btn active" id="btn-view-all" onclick="setBookMode('all')">全部</button>
-    <button class="btn btn-add-new" id="btn-view-add" onclick="setBookMode('add')">+ 添加</button>
+  <!-- 语文 -->
+  <div id="subject-content-语文" class="subject-content">
+    <div class="subject-empty"><div class="emoji">&#128221;</div><p>语文教材版本对比内容待补充</p></div>
   </div>
 
-  <!-- Category chips (only in 'all' mode) -->
-  <div class="chips" id="tb-chips"></div>
+  <!-- 数学 -->
+  <div id="subject-content-数学" class="subject-content active">
+    <!-- Dashboard -->
+    <div class="dashboard" id="tb-dashboard"></div>
 
-  <!-- VIEW: ALL -->
-  <div id="book-view-all">
-    <div class="cards-grid" id="book-cards"></div>
-  </div>
-
-  <!-- EDIT MODAL -->
-  <div id="edit-modal" style="display:none;"></div>
-
-  <!-- VIEW: ADD -->
-  <div id="book-view-add" style="display:none;">
-    <div class="add-form">
-      <h3>添加新知识点</h3>
-      <div class="form-row">
-        <label>知识点名称</label>
-        <input type="text" id="add-name" placeholder="例：叫做/叫作">
+    <!-- Search -->
+    <div class="search-wrap">
+      <div class="search-box">
+        <input type="text" id="tb-search" placeholder="搜索知识点名称或任意版本内容…" oninput="renderBookView()">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
       </div>
-      <div class="form-row">
-        <label>各版本描述</label>
-        <div class="ver-inputs">
-          <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1" placeholder="描述…"></div>
-          <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2" placeholder="描述…"></div>
-          <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3" placeholder="描述…"></div>
-          <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4" placeholder="描述…"></div>
-          <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5" placeholder="描述…"></div>
-          <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6" placeholder="描述…"></div>
-          <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7" placeholder="描述…"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-group">
+      <button class="btn active" id="btn-view-all" onclick="setBookMode('all')">全部</button>
+      <button class="btn btn-add-new" id="btn-view-add" onclick="setBookMode('add')">+ 添加</button>
+    </div>
+
+    <!-- Category chips (only in 'all' mode) -->
+    <div class="chips" id="tb-chips"></div>
+
+    <!-- VIEW: ALL -->
+    <div id="book-view-all">
+      <div class="cards-grid" id="book-cards"></div>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div id="edit-modal" style="display:none;"></div>
+
+    <!-- VIEW: ADD -->
+    <div id="book-view-add" style="display:none;">
+      <div class="add-form">
+        <h3>添加新知识点</h3>
+        <div class="form-row">
+          <label>知识点名称</label>
+          <input type="text" id="add-name" placeholder="例：叫做/叫作">
+        </div>
+        <div class="form-row">
+          <label>各版本描述</label>
+          <div class="ver-inputs">
+            <div><span class="vi-label" style="color:#ff6b8a">人教</span><input type="text" id="add-v1" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#4a90e2">北师</span><input type="text" id="add-v2" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#5cb85c">沪科</span><input type="text" id="add-v3" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#f0ad4e">湘教</span><input type="text" id="add-v4" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#9b59b6">苏科</span><input type="text" id="add-v5" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#17a2b8">浙教</span><input type="text" id="add-v6" placeholder="描述…"></div>
+            <div><span class="vi-label" style="color:#e83e8c">华师</span><input type="text" id="add-v7" placeholder="描述…"></div>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="btn-submit" onclick="addBookItem()">确认添加</button>
+          <button class="btn-cancel" onclick="setBookMode('all')">取消</button>
         </div>
       </div>
-      <div class="submit-row">
-        <button class="btn-submit" onclick="addBookItem()">确认添加</button>
-        <button class="btn-cancel" onclick="setBookMode('all')">取消</button>
-      </div>
     </div>
   </div>
+
+  <!-- 英语 -->
+  <div id="subject-content-英语" class="subject-content">
+    <div class="subject-empty"><div class="emoji">&#127468;&#127463;</div><p>英语教材版本对比内容待补充</p></div>
+  </div>
+
+  <!-- 物理 -->
+  <div id="subject-content-物理" class="subject-content">
+    <div class="subject-empty"><div class="emoji">&#128300;</div><p>物理教材版本对比内容待补充</p></div>
+  </div>
+
+  <!-- 化学 -->
+  <div id="subject-content-化学" class="subject-content">
+    <div class="subject-empty"><div class="emoji">&#129514;</div><p>化学教材版本对比内容待补充</p></div>
+  </div>
+
+  <!-- 生物 -->
+  <div id="subject-content-生物" class="subject-content">
+    <div class="subject-empty"><div class="emoji">&#129516;</div><p>生物教材版本对比内容待补充</p></div>
+  </div>
+
+  <!-- 政治 -->
+  <div id="subject-content-政治" class="subject-content">
+    <div class="subject-empty"><div class="emoji">&#127941;</div><p>政治教材版本对比内容待补充</p></div>
+  </div>
+
+  <!-- 历史 -->
+  <div id="subject-content-历史" class="subject-content">
+    <div class="subject-empty"><div class="emoji">&#128220;</div><p>历史教材版本对比内容待补充</p></div>
+  </div>
+
+  <!-- 地理 -->
+  <div id="subject-content-地理" class="subject-content">
+    <div class="subject-empty"><div class="emoji">&#127759;</div><p>地理教材版本对比内容待补充</p></div>
+  </div>
+
 </div>
 </div>
 
@@ -1292,6 +1377,23 @@ function showToast(msg) {
   t.style.animation = 'none'; t.offsetHeight;
   t.style.animation = 'toastIn 0.3s ease, toastOut 0.3s ease 2s forwards';
   setTimeout(() => { t.style.display = 'none'; }, 2400);
+}
+
+// ====== SUBJECT SWITCH ======
+let currentSubject = '数学';
+const subjects = ['语文','数学','英语','物理','化学','生物','政治','历史','地理'];
+
+function switchSubject(subject) {
+  currentSubject = subject;
+  document.querySelectorAll('#subject-tabs .subject-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.subject === subject);
+  });
+  document.querySelectorAll('#tab-textbook .subject-content').forEach(c => {
+    c.classList.toggle('active', c.id === 'subject-content-' + subject);
+  });
+  if (subject === '数学') {
+    renderBookView();
+  }
 }
 
 // ====== BOOK MODE ======
