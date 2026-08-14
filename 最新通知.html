@@ -17,6 +17,8 @@
     --card: #fff;
     --shadow: 0 4px 20px rgba(255, 107, 138, 0.08);
     --radius: 16px;
+    --gray-500: #888;
+    --gray-600: #666;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -49,16 +51,6 @@
   .nav-bar a:hover { color: var(--primary-dark); }
   .nav-bar .nav-sep { color: #ccc; font-size: 14px; }
   .nav-bar .nav-current { color: var(--text-secondary); font-size: 14px; }
-  .nav-bar .cloud-badge {
-    margin-left: auto;
-    font-size: 12px;
-    padding: 2px 10px;
-    border-radius: 10px;
-    font-weight: 600;
-  }
-  .nav-bar .cloud-badge.connected { background: #e8f5e9; color: #4caf50; }
-  .nav-bar .cloud-badge.syncing { background: #fff3e0; color: #ff9800; }
-  .nav-bar .cloud-badge.error { background: #ffebee; color: #f44336; }
   .container {
     max-width: 900px;
     margin: 24px auto 100px;
@@ -72,31 +64,123 @@
     margin: 16px 0 28px;
     letter-spacing: 2px;
   }
-  .toolbar {
+
+  /* ===== 云端配置面板 ===== */
+  .cloud-config {
+    background: linear-gradient(135deg, #fff5f8 0%, #fff 100%);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .cloud-config-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
   }
-  .toolbar .sync-info {
-    font-size: 13px;
-    color: var(--text-secondary);
-  }
-  .toolbar button.sync-btn {
-    background: #fff;
-    border: 1px solid var(--border);
+  .cloud-config-header h3 {
+    margin: 0;
+    font-size: 15px;
     color: var(--primary);
-    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cloud-config-header .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .cloud-config-header .badge.connected {
+    background: #d4f7dc;
+    color: #1d9b4a;
+  }
+  .cloud-config-header .badge.disconnected {
+    background: #ffe4ea;
+    color: var(--primary);
+  }
+  .cloud-config-body {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+  .cloud-config .form-row {
+    margin-bottom: 12px;
+  }
+  .cloud-config label {
+    font-size: 13px;
+    color: var(--gray-600);
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .cloud-config input[type="text"], .cloud-config input[type="password"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
     border-radius: 8px;
     font-size: 13px;
-    cursor: pointer;
-    transition: all 0.15s ease;
+    background: #fff;
   }
-  .toolbar button.sync-btn:hover {
-    background: var(--primary-light);
+  .cloud-config input:focus {
+    outline: none;
     border-color: var(--primary);
   }
+  .cloud-config .hint {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 4px;
+  }
+  .cloud-config .cfg-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .cloud-config .cfg-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .cloud-config .cfg-btn.primary {
+    background: var(--primary);
+    color: #fff;
+  }
+  .cloud-config .cfg-btn.primary:hover { background: #ff5270; }
+  .cloud-config .cfg-btn.ghost {
+    background: #fff;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+  .cloud-config .cfg-btn.ghost:hover { background: #fff5f8; }
+  .cloud-config .cfg-btn.danger {
+    background: #fff;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    font-size: 12px;
+  }
+  .cloud-config .cfg-status {
+    font-size: 12px;
+    color: var(--gray-600);
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.7);
+    margin-bottom: 8px;
+    display: none;
+  }
+  .cloud-config .cfg-status.show { display: block; }
+  .cloud-config .cfg-status.success { color: #1d9b4a; background: #d4f7dc; }
+  .cloud-config .cfg-status.error { color: #e74c3c; background: #fde8e8; }
+
   .announcements-list {
     display: flex;
     flex-direction: column;
@@ -417,15 +501,51 @@
   <a href="index.html">&larr; 智能校对工具</a>
   <span class="nav-sep">/</span>
   <span class="nav-current">最新通知</span>
-  <span class="cloud-badge connected" id="cloudBadge">已连接</span>
 </div>
 
 <div class="container">
-  <h1 class="page-title">&#128226; 最新通知</h1>
-  <div class="toolbar">
-    <button class="sync-btn" onclick="syncFromCloud()">&#13219;&#65039; 从云端拉取</button>
-    <span class="sync-info" id="syncInfo"></span>
+
+  <!-- Gitee 云端共享 -->
+  <div class="cloud-config" id="cloud-config">
+    <div class="cloud-config-header" onclick="toggleCloudConfig()">
+      <h3>&#9729; Gitee 云端共享 <span class="badge disconnected" id="cloud-badge">未连接</span></h3>
+      <span style="font-size:13px;color:var(--gray-500);" id="cloud-toggle-hint">展开 &#9662;</span>
+    </div>
+    <div class="cloud-config-body" id="cloud-config-body" style="display:none;">
+      <div class="cfg-status" id="cloud-status"></div>
+      <div class="hint" id="cloud-default-hint" style="margin-bottom:12px;padding:8px 12px;background:#fff5f8;border-radius:8px;color:var(--primary);font-size:12px;display:none;">
+        当前正在使用系统内置默认配置，无需手动填写。如需使用自己的仓库，请修改后点击「保存配置」。
+      </div>
+      <div class="form-row">
+        <label>Gitee 用户名</label>
+        <input type="text" id="cfg-gitee-user" placeholder="例：zhangsan">
+        <div class="hint">你在 <a href="https://gitee.com" target="_blank">gitee.com</a> 的用户名（手机号注册即可）</div>
+      </div>
+      <div class="form-row">
+        <label>仓库名</label>
+        <input type="text" id="cfg-gitee-repo" placeholder="例：zuixintongzhi" value="zuixintongzhi">
+        <div class="hint">用于存放通知的仓库。下方「一键创建」会自动新建。</div>
+      </div>
+      <div class="form-row">
+        <label>Personal Access Token</label>
+        <input type="password" id="cfg-gitee-token" placeholder="在 Gitee 设置 → 私人令牌 生成">
+        <div class="hint">登录 Gitee → 右上角头像 → 设置 → 私人令牌 → 生成新令牌（勾选 projects 权限）</div>
+      </div>
+      <div class="cfg-actions">
+        <button class="cfg-btn primary" onclick="saveCloudConfig()">&#128190; 保存配置</button>
+        <button class="cfg-btn ghost" onclick="createNewBin()">&#128295; 一键创建仓库</button>
+        <button class="cfg-btn ghost" onclick="syncFromCloud()">&#11015; 立即从云端拉取</button>
+        <button class="cfg-btn ghost" onclick="restoreDefaultCloudConfig()">&#8617; 恢复默认配置</button>
+        <button class="cfg-btn danger" onclick="clearCloudConfig()">&#128465; 清空配置</button>
+      </div>
+      <div class="hint" style="margin-top:10px;color:var(--gray-500);font-size:12px;line-height:1.6;">
+        <b>配置一次后，所有人用相同的用户名+仓库名+Token 即可共享数据。</b><br>
+        新增/编辑/删除/置顶后自动同步到 Gitee，其他人打开网页时自动拉取。
+      </div>
+    </div>
   </div>
+
+  <h1 class="page-title">&#128226; 最新通知</h1>
   <div id="announcementsList" class="announcements-list"></div>
 </div>
 
@@ -474,18 +594,18 @@
   'use strict';
 
   var STORAGE_KEY = 'gongju_announcements_v1';
+  var CLOUD_CONFIG_KEY = 'cloud_config_announcements';
   var GITEE_API = 'https://gitee.com/api/v5';
   var GITEE_FILE_PATH = 'announcements.json';
 
-  // 内置云端配置
-  var DEFAULT_CLOUD_CONFIG = {
+  // 内置默认配置
+  var DEFAULT_GITEE_CONFIG = {
     giteeUser: 'yibenai',
     giteeRepo: 'zuixintongzhi',
     giteeToken: '5c256881414ea0e9b4014143d52d61c9'
   };
 
   var announcements = loadLocal();
-  var pendingImages = []; // 待插入的图片 base64 列表
 
   // ===== 本地存储 =====
   function loadLocal() {
@@ -532,7 +652,6 @@
         canvas.width = w; canvas.height = h;
         var ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        // PNG with transparency -> keep PNG; otherwise JPEG
         var mime = (file.type === 'image/png') ? 'image/png' : 'image/jpeg';
         var dataUrl = canvas.toDataURL(mime, quality);
         cb(dataUrl);
@@ -581,7 +700,7 @@
 
   window.removeImage = function(index) {
     var textarea = document.getElementById('contentInput');
-    var regex = /!\[\]\(data:image\/[^)]+\)/g;
+    var regex = /!\[\]\((data:image\/[^)]+)\)/g;
     var count = 0;
     var newContent = textarea.value.replace(regex, function(match) {
       if (count === index) { count++; return ''; }
@@ -594,13 +713,10 @@
 
   // ===== 渲染 =====
   function renderContent(content) {
-    // 转义 HTML
     var html = escapeHtml(content);
-    // 图片标记 ![alt](src) -> <img>
     html = html.replace(/!\[([^\]]*)\]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, function(match, alt, src) {
       return '<img src="' + src + '" alt="' + alt + '">';
     });
-    // 换行
     html = html.replace(/\n/g, '<br>');
     return html;
   }
@@ -630,9 +746,9 @@
           (a.pinned ? '<span class="pin-badge">置顶</span>' : '') +
         '</div>' +
         '<div class="announcement-meta">' +
-          '<span>📅 ' + formatDate(a.createdAt) + '</span>' +
-          (a.author ? '<span>👤 ' + escapeHtml(a.author) + '</span>' : '') +
-          (updated ? '<span>✏️ ' + updated + '</span>' : '') +
+          '<span>&#128197; ' + formatDate(a.createdAt) + '</span>' +
+          (a.author ? '<span>&#128100; ' + escapeHtml(a.author) + '</span>' : '') +
+          (updated ? '<span>&#9999; ' + updated + '</span>' : '') +
         '</div>' +
         '<div class="announcement-content">' + renderContent(a.content) + '</div>' +
         '<div class="announcement-actions">' +
@@ -651,174 +767,263 @@
     setTimeout(function() { toast.classList.remove('show'); }, 1800);
   }
 
-  function setBadge(type, text) {
-    var badge = document.getElementById('cloudBadge');
-    badge.className = 'cloud-badge ' + type;
-    badge.textContent = text;
+  // ===== Gitee 配置 =====
+  function getCloudConfig() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY) || '{}');
+      if (saved._custom && saved.giteeUser && saved.giteeToken) return saved;
+    } catch (e) {}
+    return DEFAULT_GITEE_CONFIG;
   }
+  function isUsingDefaultCloudConfig() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY) || '{}');
+      return !(saved._custom && saved.giteeUser && saved.giteeToken);
+    } catch (e) { return true; }
+  }
+  function setCloudConfig(cfg) {
+    cfg._custom = true;
+    localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg));
+  }
+  function isCloudConfigured() {
+    return true;
+  }
+
+  function updateCloudBadge() {
+    var badge = document.getElementById('cloud-badge');
+    if (!badge) return;
+    if (isCloudConfigured()) {
+      badge.className = 'badge connected';
+      badge.textContent = '已连接';
+    } else {
+      badge.className = 'badge disconnected';
+      badge.textContent = '未连接';
+    }
+  }
+
+  function showCloudStatus(msg, type) {
+    var el = document.getElementById('cloud-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'cfg-status show ' + (type || '');
+    setTimeout(function() { el.className = 'cfg-status'; }, 5000);
+  }
+
+  function fillCloudConfigInputs() {
+    var c = getCloudConfig();
+    var uEl = document.getElementById('cfg-gitee-user');
+    var rEl = document.getElementById('cfg-gitee-repo');
+    var tEl = document.getElementById('cfg-gitee-token');
+    if (uEl) uEl.value = c.giteeUser || '';
+    if (rEl) rEl.value = c.giteeRepo || 'zuixintongzhi';
+    if (tEl) tEl.value = c.giteeToken || '';
+    var hint = document.getElementById('cloud-default-hint');
+    if (hint) hint.style.display = isUsingDefaultCloudConfig() ? 'block' : 'none';
+  }
+
+  window.toggleCloudConfig = function() {
+    var body = document.getElementById('cloud-config-body');
+    var hint = document.getElementById('cloud-toggle-hint');
+    var isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? 'block' : 'none';
+    hint.textContent = isHidden ? '收起 ▴' : '展开 ▾';
+    if (isHidden) fillCloudConfigInputs();
+  };
+
+  window.saveCloudConfig = function() {
+    var giteeUser = document.getElementById('cfg-gitee-user').value.trim();
+    var giteeRepo = document.getElementById('cfg-gitee-repo').value.trim();
+    var giteeToken = document.getElementById('cfg-gitee-token').value.trim();
+    if (!giteeUser || !giteeToken) {
+      showCloudStatus('请填写 Gitee 用户名和 Token', 'error');
+      return;
+    }
+    setCloudConfig({ giteeUser: giteeUser, giteeRepo: giteeRepo || 'zuixintongzhi', giteeToken: giteeToken });
+    updateCloudBadge();
+    showCloudStatus('配置已保存。可点击「立即从云端拉取」测试连接。', 'success');
+    syncFromCloud();
+  };
+
+  window.restoreDefaultCloudConfig = function() {
+    if (!confirm('确定恢复为系统内置默认配置吗？')) return;
+    localStorage.removeItem(CLOUD_CONFIG_KEY);
+    fillCloudConfigInputs();
+    updateCloudBadge();
+    showCloudStatus('已恢复默认配置', 'success');
+    syncFromCloud();
+  };
+
+  window.clearCloudConfig = function() {
+    if (!confirm('确定清空云端配置吗？你的通知仍会保留在本地。')) return;
+    localStorage.removeItem(CLOUD_CONFIG_KEY);
+    document.getElementById('cfg-gitee-user').value = '';
+    document.getElementById('cfg-gitee-repo').value = 'zuixintongzhi';
+    document.getElementById('cfg-gitee-token').value = '';
+    var hint = document.getElementById('cloud-default-hint');
+    if (hint) hint.style.display = 'none';
+    updateCloudBadge();
+    showCloudStatus('已清空配置，数据回到纯本地模式', 'success');
+  };
 
   // ===== Gitee API =====
-  function giteeReadFile(cb) {
-    var cfg = DEFAULT_CLOUD_CONFIG;
-    var url = GITEE_API + '/repos/' + cfg.giteeUser + '/' + cfg.giteeRepo + '/contents/' + GITEE_FILE_PATH + '?access_token=' + encodeURIComponent(cfg.giteeToken);
-    fetch(url, { cache: 'no-cache' })
-      .then(function(resp) {
-        if (resp.status === 404) return null;
-        if (!resp.ok) throw new Error('读取失败 (' + resp.status + ')');
-        return resp.json();
-      })
-      .then(function(json) {
-        if (!json) { cb(null, null); return; }
-        if (Array.isArray(json) && json.length === 0) { cb(null, null); return; }
-        try {
-          var content = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
-          cb(JSON.parse(content), json.sha);
-        } catch(e) { cb(null, null); }
-      })
-      .catch(function(e) { cb(null, null, e); });
+  async function giteeReadFile(filePath) {
+    filePath = filePath || GITEE_FILE_PATH;
+    var cfg = getCloudConfig();
+    var url = GITEE_API + '/repos/' + cfg.giteeUser + '/' + cfg.giteeRepo + '/contents/' + filePath + '?access_token=' + encodeURIComponent(cfg.giteeToken);
+    var resp = await fetch(url, { cache: 'no-cache' });
+    if (resp.status === 404) return null;
+    if (!resp.ok) throw new Error('读取失败 (' + resp.status + ')');
+    var json = await resp.json();
+    if (Array.isArray(json) && json.length === 0) return null;
+    var content = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ''))));
+    return { data: JSON.parse(content), sha: json.sha };
   }
 
-  function giteeWriteFile(data, sha, cb) {
-    var cfg = DEFAULT_CLOUD_CONFIG;
+  async function giteeWriteFile(data, sha, filePath) {
+    filePath = filePath || GITEE_FILE_PATH;
+    var cfg = getCloudConfig();
     var content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
     var body = { content: content, message: '更新通知 ' + new Date().toLocaleString() };
-    if (sha) body.sha = sha;
-    var url = GITEE_API + '/repos/' + cfg.giteeUser + '/' + cfg.giteeRepo + '/contents/' + GITEE_FILE_PATH + '?access_token=' + encodeURIComponent(cfg.giteeToken);
-    fetch(url, {
-      method: sha ? 'PUT' : 'POST',
+    var isUpdate = !!sha;
+    if (isUpdate) body.sha = sha;
+    var url = GITEE_API + '/repos/' + cfg.giteeUser + '/' + cfg.giteeRepo + '/contents/' + filePath + '?access_token=' + encodeURIComponent(cfg.giteeToken);
+    var resp = await fetch(url, {
+      method: isUpdate ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
-    })
-      .then(function(resp) {
-        if (!resp.ok) return resp.text().then(function(t) { throw new Error('写入失败 (' + resp.status + '): ' + t.substring(0, 150)); });
-        return resp.json();
-      })
-      .then(function(json) { cb(true, json); })
-      .catch(function(e) { cb(false, null, e); });
+    });
+    if (!resp.ok) {
+      var t = await resp.text();
+      throw new Error('写入失败 (' + resp.status + '): ' + t.substring(0, 200));
+    }
+    return true;
   }
 
-  function giteeCreateRepo(cb) {
-    var cfg = DEFAULT_CLOUD_CONFIG;
+  async function giteeCreateRepo(repoName) {
+    var cfg = getCloudConfig();
     var url = GITEE_API + '/user/repos?access_token=' + encodeURIComponent(cfg.giteeToken);
-    fetch(url, {
+    var resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: cfg.giteeRepo, private: false, auto_init: true })
-    })
-      .then(function(resp) {
-        if (resp.status === 422) { cb(true); return; }
-        if (!resp.ok) { resp.text().then(function(t) { cb(false, new Error(t.substring(0, 150))); }); return; }
-        cb(true);
-      })
-      .catch(function(e) { cb(false, e); });
+      body: JSON.stringify({ name: repoName, private: false, auto_init: true })
+    });
+    if (resp.status === 422) {
+      var t = await resp.text();
+      if (t.includes('已存在') || t.toLowerCase().includes('already exists')) {
+        return { exists: true };
+      }
+      throw new Error('创建仓库失败 (422): ' + t.substring(0, 200));
+    }
+    if (!resp.ok) {
+      var t2 = await resp.text();
+      throw new Error('创建仓库失败 (' + resp.status + '): ' + t2.substring(0, 200));
+    }
+    return { exists: false };
   }
 
+  window.createNewBin = async function() {
+    var user = document.getElementById('cfg-gitee-user').value.trim();
+    var repo = document.getElementById('cfg-gitee-repo').value.trim() || 'zuixintongzhi';
+    var token = document.getElementById('cfg-gitee-token').value.trim();
+    if (!user || !token) { showCloudStatus('请先填写用户名和 Token', 'error'); return; }
+    showCloudStatus('正在创建仓库 ' + repo + '...', '');
+    try {
+      // 更新配置为先填写的值
+      setCloudConfig({ giteeUser: user, giteeRepo: repo, giteeToken: token });
+      var result = await giteeCreateRepo(repo);
+      var sha = null;
+      try {
+        var existing = await giteeReadFile();
+        if (existing) sha = existing.sha;
+      } catch(e) {}
+      var initialData = { announcements: announcements.slice(), updatedAt: new Date().toISOString() };
+      await giteeWriteFile(initialData, sha);
+      updateCloudBadge();
+      if (result.exists) {
+        showCloudStatus('仓库 ' + repo + ' 已存在，已直接使用并初始化数据', 'success');
+      } else {
+        showCloudStatus('仓库 ' + repo + ' 已创建并初始化，配置已保存', 'success');
+      }
+    } catch (e) {
+      if (e.message.includes('404') || e.message.includes('Not Found')) {
+        showCloudStatus('仓库不存在。Gitee 可能保留了该名字，请换一个仓库名再试', 'error');
+      } else {
+        showCloudStatus(e.message, 'error');
+      }
+    }
+  };
+
   // ===== 云端同步 =====
-  window.syncFromCloud = function() {
-    setBadge('syncing', '同步中...');
-    var info = document.getElementById('syncInfo');
-    info.textContent = '正在从云端拉取...';
-    giteeReadFile(function(cloudData, sha, err) {
-      if (err && !cloudData) {
-        // 404 且本地有数据：自动上传到云端
-        if (err.message && err.message.indexOf('404') !== -1 && announcements.length > 0) {
-          info.textContent = '云端暂无数据，正在上传本地数据...';
-          pushToCloud();
-          return;
-        }
-        setBadge('error', '同步失败');
-        info.textContent = '拉取失败: ' + err.message;
-        setTimeout(function() { setBadge('connected', '已连接'); }, 3000);
+  window.syncFromCloud = async function() {
+    var cfg = getCloudConfig();
+    if (!cfg.giteeUser || !cfg.giteeToken) { showCloudStatus('请先配置 Gitee', 'error'); return; }
+    showCloudStatus('正在从云端拉取...', '');
+    try {
+      var result = await giteeReadFile();
+      if (!result) {
+        showCloudStatus('云端还没有数据，添加通知后会自动上传', 'success');
         return;
       }
-      if (!cloudData) {
-        // 云端仓库/文件不存在，但本地有数据，自动上传
-        if (announcements.length > 0) {
-          info.textContent = '云端暂无数据，正在上传本地数据...';
-          pushToCloud();
-        } else {
-          setBadge('connected', '已连接');
-          info.textContent = '云端暂无数据';
-        }
-        return;
-      }
-      var cloudList = (cloudData.announcements && Array.isArray(cloudData.announcements)) ? cloudData.announcements : [];
-      // 合并：以 id 为唯一标识，云端+本地合并，updatedAt 更新的优先
+      var cloudList = (result.data && Array.isArray(result.data.announcements)) ? result.data.announcements : [];
+      // 按 id 合并，updatedAt 更新的优先
       var map = {};
       announcements.forEach(function(a) { map[a.id] = a; });
       cloudList.forEach(function(a) {
         if (!map[a.id]) {
           map[a.id] = a;
-        } else {
-          // 冲突时取 updatedAt 更新的
-          if ((a.updatedAt || 0) > (map[a.id].updatedAt || 0)) {
-            map[a.id] = a;
-          }
+        } else if ((a.updatedAt || 0) > (map[a.id].updatedAt || 0)) {
+          map[a.id] = a;
         }
       });
       var merged = Object.keys(map).map(function(k) { return map[k]; });
       announcements = merged;
       saveLocal(announcements);
       render();
-      setBadge('connected', '已连接');
-      info.textContent = '已同步 ' + cloudList.length + ' 条云端通知 (' + (cloudData.updatedAt || '') + ')';
-    });
+      showCloudStatus('拉取成功，共 ' + cloudList.length + ' 条通知 (更新于 ' + (result.data.updatedAt || '未知') + ')', 'success');
+    } catch (e) {
+      showCloudStatus('拉取失败: ' + e.message, 'error');
+    }
   };
 
-  function pushToCloud() {
-    setBadge('syncing', '上传中...');
-    var info = document.getElementById('syncInfo');
-    info.textContent = '正在同步到云端...';
+  async function pushToCloud() {
+    var cfg = getCloudConfig();
+    if (!cfg.giteeUser || !cfg.giteeToken) return false;
 
-    function buildMerged(cloudList) {
+    async function tryMergeAndWrite(attempt) {
+      var cloudData = null, sha = null;
+      try {
+        var existing = await giteeReadFile();
+        if (existing) { cloudData = existing.data; sha = existing.sha; }
+      } catch(e) {}
+
+      var cloudList = (cloudData && Array.isArray(cloudData.announcements)) ? cloudData.announcements : [];
       var map = {};
-      (cloudList || []).forEach(function(a) { map[a.id] = a; });
-      announcements.forEach(function(a) {
-        if (!map[a.id] || (a.updatedAt || 0) >= (map[a.id].updatedAt || 0)) {
-          map[a.id] = a;
-        }
-      });
-      return Object.keys(map).map(function(k) { return map[k]; });
+      cloudList.forEach(function(a) { map[a.id] = a; });
+      announcements.forEach(function(a) { map[a.id] = a; });
+      var merged = Object.keys(map).map(function(k) { return map[k]; });
+      await giteeWriteFile({ announcements: merged, updatedAt: new Date().toISOString() }, sha);
+      return merged.length;
     }
 
-    function doWrite(sha, merged) {
-      var payload = { announcements: merged, updatedAt: new Date().toISOString() };
-      giteeWriteFile(payload, sha, function(ok, json, err) {
-        if (ok) {
-          setBadge('connected', '已连接');
-          info.textContent = '已同步到云端 ' + formatDate(Date.now());
-          showToast('已同步到云端');
-        } else {
-          setBadge('error', '上传失败');
-          var msg = err && err.message ? err.message : '未知错误';
-          info.textContent = '同步失败: ' + msg;
-          console.error('pushToCloud 失败:', err);
-          showToast('同步失败: ' + msg);
-          setTimeout(function() { setBadge('connected', '已连接'); }, 3000);
+    var lastError = null;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        var count = await tryMergeAndWrite(attempt);
+        showCloudStatus('已同步到云端（共 ' + count + ' 条）', 'success');
+        return true;
+      } catch (e) {
+        lastError = e;
+        if (attempt < 2 && (e.message.includes('409') || e.message.includes('sha'))) {
+          await new Promise(function(r) { setTimeout(r, 300); });
+          continue;
         }
-      });
-    }
-
-    giteeReadFile(function(cloudData, sha, err) {
-      // 404 说明仓库或文件不存在，尝试创建仓库后再写入
-      if (err && err.message && err.message.indexOf('404') !== -1) {
-        info.textContent = '云端仓库不存在，正在创建...';
-        giteeCreateRepo(function(ok, createErr) {
-          if (ok) {
-            doWrite(null, announcements.slice());
-          } else {
-            setBadge('error', '创建仓库失败');
-            var msg = createErr && createErr.message ? createErr.message : '未知错误';
-            info.textContent = '创建仓库失败: ' + msg;
-            showToast('创建云端仓库失败: ' + msg);
-            setTimeout(function() { setBadge('connected', '已连接'); }, 3000);
-          }
-        });
-        return;
+        break;
       }
-      var merged = buildMerged((cloudData && cloudData.announcements) ? cloudData.announcements : []);
-      doWrite(sha || null, merged);
-    });
+    }
+
+    console.error('pushToCloud 失败:', lastError);
+    showCloudStatus('云端同步失败: ' + (lastError && lastError.message ? lastError.message : '未知错误'), 'error');
+    return false;
   }
 
   // ===== 弹窗操作 =====
@@ -911,7 +1116,6 @@
   document.getElementById('announcementForm').addEventListener('submit', handleSave);
   document.getElementById('announcementsList').addEventListener('click', handleListClick);
 
-  // 内容输入框：粘贴图片 + 拖拽图片
   var contentInput = document.getElementById('contentInput');
   contentInput.addEventListener('paste', function(e) {
     var items = e.clipboardData.items;
@@ -941,12 +1145,11 @@
     }
     if (files.length) handleImageFiles(files);
   });
-  // 输入时更新图片预览
   contentInput.addEventListener('input', function() { renderImagePreview(this.value); });
 
   // ===== 初始化 =====
   render();
-  // 页面加载时自动从云端拉取
+  updateCloudBadge();
   syncFromCloud();
 })();
 </script>
