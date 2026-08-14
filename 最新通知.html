@@ -594,6 +594,7 @@
   'use strict';
 
   var STORAGE_KEY = 'gongju_announcements_v1';
+  var STORAGE_KEY_DELETED = 'gongju_announcements_deleted_v1';
   var CLOUD_CONFIG_KEY = 'cloud_config_announcements';
   var GITEE_API = 'https://gitee.com/api/v5';
   var GITEE_FILE_PATH = 'announcements.json';
@@ -606,6 +607,8 @@
   };
 
   var announcements = loadLocal();
+  // 已删除通知的 id 列表：用于跨浏览器同步删除操作
+  var deletedIds = loadDeletedIds();
 
   // ===== 本地存储 =====
   function loadLocal() {
@@ -628,6 +631,17 @@
   function saveLocal(list) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
     catch (e) { showToast('保存失败：' + e.message); }
+  }
+  function loadDeletedIds() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY_DELETED);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return [];
+  }
+  function saveDeletedIds() {
+    try { localStorage.setItem(STORAGE_KEY_DELETED, JSON.stringify(deletedIds)); }
+    catch (e) {}
   }
   function genId() {
     return 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
@@ -944,7 +958,7 @@
         var existing = await giteeReadFile();
         if (existing) sha = existing.sha;
       } catch(e) {}
-      var initialData = { announcements: announcements.slice(), updatedAt: new Date().toISOString() };
+      var initialData = { announcements: announcements.slice(), deletedIds: deletedIds.slice(), updatedAt: new Date().toISOString() };
       await giteeWriteFile(initialData, sha);
       updateCloudBadge();
       if (result.exists) {
@@ -982,10 +996,18 @@
         return;
       }
       var cloudList = (result.data && Array.isArray(result.data.announcements)) ? result.data.announcements : [];
-      // 按 id 合并，updatedAt 更新的优先
+      var cloudDeleted = (result.data && Array.isArray(result.data.deletedIds)) ? result.data.deletedIds : [];
+      // 合并已删除 id（本地 + 云端），先过滤再合并通知
+      var mergedDeleted = {};
+      deletedIds.forEach(function(id) { mergedDeleted[id] = true; });
+      cloudDeleted.forEach(function(id) { mergedDeleted[id] = true; });
+      deletedIds = Object.keys(mergedDeleted);
+      saveDeletedIds();
+      // 按 id 合并，updatedAt 更新的优先，已删除的不再出现
       var map = {};
-      announcements.forEach(function(a) { map[a.id] = a; });
+      announcements.forEach(function(a) { if (!mergedDeleted[a.id]) map[a.id] = a; });
       cloudList.forEach(function(a) {
+        if (mergedDeleted[a.id]) return;
         if (!map[a.id]) {
           map[a.id] = a;
         } else if ((a.updatedAt || 0) > (map[a.id].updatedAt || 0)) {
@@ -1014,11 +1036,25 @@
       } catch(e) {}
 
       var cloudList = (cloudData && Array.isArray(cloudData.announcements)) ? cloudData.announcements : [];
+      var cloudDeleted = (cloudData && Array.isArray(cloudData.deletedIds)) ? cloudData.deletedIds : [];
+
+      // 合并所有已删除 id（本地 + 云端）
+      var mergedDeleted = {};
+      deletedIds.forEach(function(id) { mergedDeleted[id] = true; });
+      cloudDeleted.forEach(function(id) { mergedDeleted[id] = true; });
+      var deletedArr = Object.keys(mergedDeleted);
+
+      // 合并通知：剔除已删除的，本地优先（覆盖云端同 id）
       var map = {};
-      cloudList.forEach(function(a) { map[a.id] = a; });
-      announcements.forEach(function(a) { map[a.id] = a; });
+      cloudList.forEach(function(a) { if (!mergedDeleted[a.id]) map[a.id] = a; });
+      announcements.forEach(function(a) { if (!mergedDeleted[a.id]) map[a.id] = a; });
       var merged = Object.keys(map).map(function(k) { return map[k]; });
-      await giteeWriteFile({ announcements: merged, updatedAt: new Date().toISOString() }, sha);
+
+      // 回写本地 deletedIds 并持久化
+      deletedIds = deletedArr;
+      saveDeletedIds();
+
+      await giteeWriteFile({ announcements: merged, deletedIds: deletedArr, updatedAt: new Date().toISOString() }, sha);
       return merged.length;
     }
 
@@ -1117,7 +1153,10 @@
     } else if (action === 'delete') {
       if (!confirm('确定删除「' + target.title + '」吗？')) return;
       announcements = announcements.filter(function(a) { return a.id !== id; });
+      // 记录已删除 id，同步到云端，其他浏览器才能感知删除
+      if (deletedIds.indexOf(id) === -1) deletedIds.push(id);
       saveLocal(announcements);
+      saveDeletedIds();
       render();
       showToast('已删除');
       pushToCloud();
