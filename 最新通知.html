@@ -707,7 +707,7 @@
     })
       .then(function(resp) {
         if (resp.status === 422) { cb(true); return; }
-        if (!resp.ok) { resp.text().then(function(t) { cb(false, e); }); return; }
+        if (!resp.ok) { resp.text().then(function(t) { cb(false, new Error(t.substring(0, 150))); }); return; }
         cb(true);
       })
       .catch(function(e) { cb(false, e); });
@@ -720,14 +720,26 @@
     info.textContent = '正在从云端拉取...';
     giteeReadFile(function(cloudData, sha, err) {
       if (err && !cloudData) {
+        // 404 且本地有数据：自动上传到云端
+        if (err.message && err.message.indexOf('404') !== -1 && announcements.length > 0) {
+          info.textContent = '云端暂无数据，正在上传本地数据...';
+          pushToCloud();
+          return;
+        }
         setBadge('error', '同步失败');
         info.textContent = '拉取失败: ' + err.message;
         setTimeout(function() { setBadge('connected', '已连接'); }, 3000);
         return;
       }
       if (!cloudData) {
-        setBadge('connected', '已连接');
-        info.textContent = '云端暂无数据';
+        // 云端仓库/文件不存在，但本地有数据，自动上传
+        if (announcements.length > 0) {
+          info.textContent = '云端暂无数据，正在上传本地数据...';
+          pushToCloud();
+        } else {
+          setBadge('connected', '已连接');
+          info.textContent = '云端暂无数据';
+        }
         return;
       }
       var cloudList = (cloudData.announcements && Array.isArray(cloudData.announcements)) ? cloudData.announcements : [];
@@ -755,27 +767,57 @@
 
   function pushToCloud() {
     setBadge('syncing', '上传中...');
-    giteeReadFile(function(cloudData, sha) {
-      // 合并云端和本地
-      var cloudList = (cloudData && cloudData.announcements) ? cloudData.announcements : [];
+    var info = document.getElementById('syncInfo');
+    info.textContent = '正在同步到云端...';
+
+    function buildMerged(cloudList) {
       var map = {};
-      cloudList.forEach(function(a) { map[a.id] = a; });
+      (cloudList || []).forEach(function(a) { map[a.id] = a; });
       announcements.forEach(function(a) {
         if (!map[a.id] || (a.updatedAt || 0) >= (map[a.id].updatedAt || 0)) {
           map[a.id] = a;
         }
       });
-      var merged = Object.keys(map).map(function(k) { return map[k]; });
+      return Object.keys(map).map(function(k) { return map[k]; });
+    }
+
+    function doWrite(sha, merged) {
       var payload = { announcements: merged, updatedAt: new Date().toISOString() };
       giteeWriteFile(payload, sha, function(ok, json, err) {
         if (ok) {
           setBadge('connected', '已连接');
+          info.textContent = '已同步到云端 ' + formatDate(Date.now());
+          showToast('已同步到云端');
         } else {
           setBadge('error', '上传失败');
+          var msg = err && err.message ? err.message : '未知错误';
+          info.textContent = '同步失败: ' + msg;
           console.error('pushToCloud 失败:', err);
+          showToast('同步失败: ' + msg);
           setTimeout(function() { setBadge('connected', '已连接'); }, 3000);
         }
       });
+    }
+
+    giteeReadFile(function(cloudData, sha, err) {
+      // 404 说明仓库或文件不存在，尝试创建仓库后再写入
+      if (err && err.message && err.message.indexOf('404') !== -1) {
+        info.textContent = '云端仓库不存在，正在创建...';
+        giteeCreateRepo(function(ok, createErr) {
+          if (ok) {
+            doWrite(null, announcements.slice());
+          } else {
+            setBadge('error', '创建仓库失败');
+            var msg = createErr && createErr.message ? createErr.message : '未知错误';
+            info.textContent = '创建仓库失败: ' + msg;
+            showToast('创建云端仓库失败: ' + msg);
+            setTimeout(function() { setBadge('connected', '已连接'); }, 3000);
+          }
+        });
+        return;
+      }
+      var merged = buildMerged((cloudData && cloudData.announcements) ? cloudData.announcements : []);
+      doWrite(sha || null, merged);
     });
   }
 
